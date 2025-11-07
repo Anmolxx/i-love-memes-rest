@@ -1,13 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
-  IsEnum,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
 import { FileDto } from '../../files/dto/file.dto';
 import { MemeAudience } from '../memes.enum';
 

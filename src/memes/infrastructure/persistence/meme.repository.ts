@@ -1,6 +1,6 @@
+import { NullableType } from '../../../utils/types/nullable.type';
 import { IPaginationOptions } from '../../../utils/types/pagination-options';
 import { Meme } from '../../domain/meme';
-import { NullableType } from '../../../utils/types/nullable.type';
 import { CreateMemeDto } from '../../dto/create-meme.dto';
 
 export abstract class MemesRepository {

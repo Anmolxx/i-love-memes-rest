@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MemesRepository } from '../meme.repository';
-import { MemesRelationalRepository } from './repositories/meme.repository';
 import { MemeEntity } from './entities/meme.entity';
+import { MemesRelationalRepository } from './repositories/meme.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([MemeEntity])],

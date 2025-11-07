@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FileEntity } from '../entities/file.entity';
 import { In, Repository } from 'typeorm';
+import { NullableType } from '../../../../../utils/types/nullable.type';
+import { FileType } from '../../../../domain/file';
+import { FileStatus } from '../../../../file.enum';
 import { FileRepository } from '../../file.repository';
+import { FileEntity } from '../entities/file.entity';
 
 import { FileMapper } from '../mappers/file.mapper';
-import { FileType } from '../../../../domain/file';
-import { NullableType } from '../../../../../utils/types/nullable.type';
-import { FileStatus } from '../../../../file.enum';
 
 @Injectable()
 export class FileRelationalRepository implements FileRepository {

@@ -4,21 +4,21 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { TemplateRepository } from './infrastructure/persistence/template.repository';
-import { FilesService } from '../files/files.service';
-import { CreateTemplateDto } from './dto/create-template.dto';
-import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
-import { TemplateMapper } from './infrastructure/persistence/relational/mapper/template.mapper';
 import slugify from 'slugify';
+import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
+import { FilesService } from '../files/files.service';
 import {
   IFilterOptions,
   IPaginationOptions,
   ISearchOptions,
   ISortOptions,
 } from '../utils/types/pagination-options';
-import { TemplateEntity } from './infrastructure/persistence/relational/entities/template.entity';
-import { UpdateTemplateDto } from './dto/update-template.dto';
 import { Template } from './domain/template';
+import { CreateTemplateDto } from './dto/create-template.dto';
+import { UpdateTemplateDto } from './dto/update-template.dto';
+import { TemplateEntity } from './infrastructure/persistence/relational/entities/template.entity';
+import { TemplateMapper } from './infrastructure/persistence/relational/mapper/template.mapper';
+import { TemplateRepository } from './infrastructure/persistence/template.repository';
 
 @Injectable()
 export class TemplateService {

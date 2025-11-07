@@ -33,7 +33,8 @@ Belongs to the [bc boilerplates](https://bcboilerplates.com/) ecosystem
 
 ## Features
 
-- [x] Database. Support [TypeORM](https://www.npmjs.com/package/typeorm) and [Mongoose](https://www.npmjs.com/package/mongoose).
+- [x] Database. Support [TypeORM](https://www.npmjs.com/package/typeorm)
+  and [Mongoose](https://www.npmjs.com/package/mongoose).
 - [x] Seeding.
 - [x] Config Service ([@nestjs/config](https://www.npmjs.com/package/@nestjs/config)).
 - [x] Mailing ([nodemailer](https://www.npmjs.com/package/nodemailer)).
@@ -70,4 +71,7 @@ Belongs to the [bc boilerplates](https://bcboilerplates.com/) ecosystem
 
 ## Support
 
-If you seek consulting, support, or wish to collaborate, please contact us via [boilerplates@brocoders.com](mailto:boilerplates@brocoders.com). For any inquiries regarding boilerplates, feel free to ask on [GitHub Discussions](https://github.com/brocoders/nestjs-boilerplate/discussions) or [Discord](https://discord.com/channels/520622812742811698/1197293125434093701).
+If you seek consulting, support, or wish to collaborate, please contact us
+via [boilerplates@brocoders.com](mailto:boilerplates@brocoders.com). For any inquiries regarding boilerplates, feel free
+to ask on [GitHub Discussions](https://github.com/brocoders/nestjs-boilerplate/discussions)
+or [Discord](https://discord.com/channels/520622812742811698/1197293125434093701).

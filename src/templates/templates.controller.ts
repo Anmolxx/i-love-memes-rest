@@ -1,11 +1,4 @@
 import {
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
-import {
   Body,
   Controller,
   Delete,
@@ -18,18 +11,25 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { TemplateService } from './templates.service';
-import { CreateTemplateDto } from './dto/create-template.dto';
+import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
+import { API_PAGE_LIMIT } from '../constants/common.constant';
 import { createResponse } from '../utils/base-response';
+import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
+import { Template } from './domain/template';
+import { CreateTemplateDto } from './dto/create-template.dto';
+import { GetTemplatesQueryDto } from './dto/get-all-template-query.dto';
 import { CreateTemplateResponseDto } from './dto/response/create-template.response.dto';
 import { TemplateUuidDto } from './dto/template-uuid.dto';
-import { Template } from './domain/template';
-import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
-import { GetTemplatesQueryDto } from './dto/get-all-template-query.dto';
-import { API_PAGE_LIMIT } from '../constants/common.constant';
 import { UpdateTemplateDto } from './dto/update-template.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { TemplateService } from './templates.service';
 
 @ApiTags('Template')
 @Controller({

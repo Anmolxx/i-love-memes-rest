@@ -1,19 +1,19 @@
 import {
+  ForbiddenException,
   HttpStatus,
   Injectable,
-  UnprocessableEntityException,
-  ForbiddenException,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
-import { MemesRepository } from './infrastructure/persistence/meme.repository';
+import { FileType } from '../files/domain/file';
+import { FileStatus } from '../files/file.enum';
+import { FilesService } from '../files/files.service';
+import { User } from '../users/domain/user';
+import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
 import { CreateMemeDto } from './dto/create-meme.dto';
 import { UpdateMemeDto } from './dto/update-meme.dto';
-import { FilesService } from '../files/files.service';
-import { IPaginationOptions } from '../utils/types/pagination-options';
-import { User } from '../users/domain/user';
-import { FileType } from '../files/domain/file';
-import { FileStatus } from '../files/file.enum';
+import { MemesRepository } from './infrastructure/persistence/meme.repository';
 
 @Injectable()
 export class MemesService {

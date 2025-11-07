@@ -1,9 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TemplateRepository } from '../../template.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TemplateEntity } from '../entities/template.entity';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { CreateTemplateDto } from '../../../../dto/create-template.dto';
 import { JwtPayloadType } from '../../../../../auth/strategies/types/jwt-payload.type';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import {
@@ -13,6 +10,9 @@ import {
   ISortOptions,
 } from '../../../../../utils/types/pagination-options';
 import { Template } from '../../../../domain/template';
+import { CreateTemplateDto } from '../../../../dto/create-template.dto';
+import { TemplateRepository } from '../../template.repository';
+import { TemplateEntity } from '../entities/template.entity';
 
 @Injectable()
 export class TemplateRelationalRepository implements TemplateRepository {

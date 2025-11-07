@@ -1,12 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   MaxLength,
-  IsObject,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
 
 export class CreateTemplateDto {
   @ApiProperty({

@@ -1,6 +1,6 @@
-import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class MemeListQueryDto {
   @IsOptional()

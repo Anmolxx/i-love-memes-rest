@@ -1,19 +1,19 @@
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   HttpStatus,
   Injectable,
   PayloadTooLargeException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { ConfigService } from '@nestjs/config';
+import { AllConfigType } from '../../../../config/config.type';
+import { FileType } from '../../../domain/file';
+import { FileStatus } from '../../../file.enum';
 import { FileRepository } from '../../persistence/file.repository';
 
 import { FileUploadDto } from './dto/file.dto';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { ConfigService } from '@nestjs/config';
-import { FileType } from '../../../domain/file';
-import { AllConfigType } from '../../../../config/config.type';
-import { FileStatus } from '../../../file.enum';
 
 @Injectable()
 export class FilesS3PresignedService {

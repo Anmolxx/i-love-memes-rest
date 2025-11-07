@@ -1,15 +1,19 @@
 # Installation
 
-NestJS Boilerplate supports [TypeORM](https://www.npmjs.com/package/typeorm) and [Mongoose](https://www.npmjs.com/package/mongoose) for working with databases. By default, TypeORM uses [PostgreSQL](https://www.postgresql.org/) as the main database, but you can use any relational database.
+NestJS Boilerplate supports [TypeORM](https://www.npmjs.com/package/typeorm)
+and [Mongoose](https://www.npmjs.com/package/mongoose) for working with databases. By default, TypeORM
+uses [PostgreSQL](https://www.postgresql.org/) as the main database, but you can use any relational database.
 
-Switching between TypeORM and Mongoose is implemented based on the [Hexagonal Architecture](architecture.md#hexagonal-architecture). This makes it easy to choose the right database for your application.
+Switching between TypeORM and Mongoose is implemented based on
+the [Hexagonal Architecture](architecture.md#hexagonal-architecture). This makes it easy to choose the right database
+for your application.
 
 ---
 
 ## Table of Contents <!-- omit in toc -->
 
 - [Comfortable development (PostgreSQL + TypeORM)](#comfortable-development-postgresql--typeorm)
-  - [Video guideline (PostgreSQL + TypeORM)](#video-guideline-postgresql--typeorm)
+    - [Video guideline (PostgreSQL + TypeORM)](#video-guideline-postgresql--typeorm)
 - [Comfortable development (MongoDB + Mongoose)](#comfortable-development-mongodb--mongoose)
 - [Quick run (PostgreSQL + TypeORM)](#quick-run-postgresql--typeorm)
 - [Quick run (MongoDB + Mongoose)](#quick-run-mongodb--mongoose)

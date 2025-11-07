@@ -1,28 +1,28 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
-  Request,
-  Post,
-  UseGuards,
   Patch,
-  Delete,
+  Post,
+  Request,
   SerializeOptions,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { User } from '../users/domain/user';
+import { NullableType } from '../utils/types/nullable.type';
+import { AuthService } from './auth.service';
+import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
-import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
+import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
 import { AuthUpdateDto } from './dto/auth-update.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
-import { NullableType } from '../utils/types/nullable.type';
-import { User } from '../users/domain/user';
 import { RefreshResponseDto } from './dto/refresh-response.dto';
 
 @ApiTags('Auth')

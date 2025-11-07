@@ -1,14 +1,11 @@
-import {
-  // common
-  Module,
-} from '@nestjs/common';
-import { RelationalFilePersistenceModule } from './infrastructure/persistence/relational/relational-persistence.module';
-import { FilesService } from './files.service';
-import fileConfig from './config/file.config';
+import { Module } from '@nestjs/common';
 import { FileConfig, FileDriver } from './config/file-config.type';
+import fileConfig from './config/file.config';
+import { FilesService } from './files.service';
+import { RelationalFilePersistenceModule } from './infrastructure/persistence/relational/relational-persistence.module';
 import { FilesLocalModule } from './infrastructure/uploader/local/files.module';
-import { FilesS3Module } from './infrastructure/uploader/s3/files.module';
 import { FilesS3PresignedModule } from './infrastructure/uploader/s3-presigned/files.module';
+import { FilesS3Module } from './infrastructure/uploader/s3/files.module';
 
 const infrastructurePersistenceModule = RelationalFilePersistenceModule;
 

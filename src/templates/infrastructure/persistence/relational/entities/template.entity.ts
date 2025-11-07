@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
+import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 
 @Entity({
   name: 'template',

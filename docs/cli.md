@@ -5,15 +5,15 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [Generate resource](#generate-resource)
-  - [For document oriented database (MongoDB + Mongoose)](#for-document-oriented-database-mongodb--mongoose)
-  - [For relational database (PostgreSQL + TypeORM)](#for-relational-database-postgresql--typeorm)
-    - [Video guideline for relational database (PostgreSQL + TypeORM)](#video-guideline-for-relational-database-postgresql--typeorm)
-  - [For both databases](#for-both-databases)
+    - [For document oriented database (MongoDB + Mongoose)](#for-document-oriented-database-mongodb--mongoose)
+    - [For relational database (PostgreSQL + TypeORM)](#for-relational-database-postgresql--typeorm)
+        - [Video guideline for relational database (PostgreSQL + TypeORM)](#video-guideline-for-relational-database-postgresql--typeorm)
+    - [For both databases](#for-both-databases)
 - [Add property to resource](#add-property-to-resource)
-  - [Property for document oriented database (MongoDB + Mongoose)](#property-for-document-oriented-database-mongodb--mongoose)
-  - [Property for relational database (PostgreSQL + TypeORM)](#property-for-relational-database-postgresql--typeorm)
-    - [Video guideline how to add property for relational database (PostgreSQL + TypeORM)](#video-guideline-how-to-add-property-for-relational-database-postgresql--typeorm)
-  - [Property for both databases](#property-for-both-databases)
+    - [Property for document oriented database (MongoDB + Mongoose)](#property-for-document-oriented-database-mongodb--mongoose)
+    - [Property for relational database (PostgreSQL + TypeORM)](#property-for-relational-database-postgresql--typeorm)
+        - [Video guideline how to add property for relational database (PostgreSQL + TypeORM)](#video-guideline-how-to-add-property-for-relational-database-postgresql--typeorm)
+    - [Property for both databases](#property-for-both-databases)
 
 ---
 
@@ -22,7 +22,7 @@
 Generate resource with the following commands:
 
 ### For document oriented database (MongoDB + Mongoose)
-  
+
 ```bash
 npm run generate:resource:document -- --name ResourceName
 ```

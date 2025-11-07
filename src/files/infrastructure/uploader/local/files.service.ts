@@ -5,13 +5,13 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
-import { FileRepository } from '../../persistence/file.repository';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 import { AllConfigType } from '../../../../config/config.type';
 import { FileType } from '../../../domain/file';
 import { FileStatus } from '../../../file.enum';
-import { promises as fs } from 'fs';
-import * as path from 'path';
+
+import { FileRepository } from '../../persistence/file.repository';
 
 @Injectable()
 export class FilesLocalService {

@@ -1,9 +1,4 @@
-import {
-  // typeorm decorators here
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 import { FileStatus } from '../../../../file.enum';
 

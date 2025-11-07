@@ -3,19 +3,20 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [General info](#general-info)
-  - [Auth via email flow](#auth-via-email-flow)
-  - [Auth via external services or social networks flow](#auth-via-external-services-or-social-networks-flow)
+    - [Auth via email flow](#auth-via-email-flow)
+    - [Auth via external services or social networks flow](#auth-via-external-services-or-social-networks-flow)
 - [Configure Auth](#configure-auth)
 - [Auth via Apple](#auth-via-apple)
 - [Auth via Facebook](#auth-via-facebook)
 - [Auth via Google](#auth-via-google)
 - [About JWT strategy](#about-jwt-strategy)
 - [Refresh token flow](#refresh-token-flow)
-  - [Video example](#video-example)
-  - [Support login for multiple devices / Sessions](#support-login-for-multiple-devices--sessions)
+    - [Video example](#video-example)
+    - [Support login for multiple devices / Sessions](#support-login-for-multiple-devices--sessions)
 - [Logout](#logout)
 - [Q\&A](#qa)
-  - [After `POST /api/v1/auth/logout` or removing session from the database, the user can still make requests with an `access token` for some time. Why?](#after-post-apiv1authlogout-or-removing-session-from-the-database-the-user-can-still-make-requests-with-an-access-token-for-some-time-why)
+    - [After `POST /api/v1/auth/logout` or removing session from the database, the user can still make requests with an
+      `access token` for some time. Why?](#after-post-apiv1authlogout-or-removing-session-from-the-database-the-user-can-still-make-requests-with-an-access-token-for-some-time-why)
 
 ---
 
@@ -113,7 +114,9 @@ For auth with external services or social networks you need:
 
 ## Auth via Google
 
-1. You need a `CLIENT_ID`, `CLIENT_SECRET`. You can find these pieces of information by going to the [Developer Console](https://console.cloud.google.com/), clicking your project (if doesn't have create it here https://console.cloud.google.com/projectcreate) -> `APIs & services` -> `credentials`.
+1. You need a `CLIENT_ID`, `CLIENT_SECRET`. You can find these pieces of information by going to
+   the [Developer Console](https://console.cloud.google.com/), clicking your project (if doesn't have create it
+   here https://console.cloud.google.com/projectcreate) -> `APIs & services` -> `credentials`.
 1. Change `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`
 
    ```text
@@ -123,9 +126,12 @@ For auth with external services or social networks you need:
 
 ## About JWT strategy
 
-In the `validate` method of the `src/auth/strategies/jwt.strategy.ts` file, you can see that we do not check if the user exists in the database because it is redundant, it may lose the benefits of the JWT approach and can affect the application performance.
+In the `validate` method of the `src/auth/strategies/jwt.strategy.ts` file, you can see that we do not check if the user
+exists in the database because it is redundant, it may lose the benefits of the JWT approach and can affect the
+application performance.
 
-To better understand how JWT works, watch the video explanation https://www.youtube.com/watch?v=Y2H3DXDeS3Q and read this article https://jwt.io/introduction/
+To better understand how JWT works, watch the video explanation https://www.youtube.com/watch?v=Y2H3DXDeS3Q and read
+this article https://jwt.io/introduction/
 
 ```typescript
 // src/auth/strategies/jwt.strategy.ts
@@ -150,7 +156,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
 1. On sign in (`POST /api/v1/auth/email/login`) you will receive `token`, `tokenExpires` and `refreshToken` in response.
 1. On each regular request you need to send `token` in `Authorization` header.
-1. If `token` is expired (check with `tokenExpires` property on client app) you need to send `refreshToken` to `POST /api/v1/auth/refresh` in `Authorization` header to refresh `token`. You will receive new `token`, `tokenExpires` and `refreshToken` in response.
+1. If `token` is expired (check with `tokenExpires` property on client app) you need to send `refreshToken` to
+   `POST /api/v1/auth/refresh` in `Authorization` header to refresh `token`. You will receive new `token`,
+   `tokenExpires` and `refreshToken` in response.
 
 ### Video example
 
@@ -158,9 +166,13 @@ https://github.com/brocoders/nestjs-boilerplate/assets/6001723/f6fdcc89-5ec6-472
 
 ### Support login for multiple devices / Sessions
 
-Boilerplate supports login for multiple devices with a Refresh Token flow. This is possible due to `sessions`. When a user logs in, a new session is created and stored in the database. The session record contains `sessionId (id)`, `userId`, and `hash`.
+Boilerplate supports login for multiple devices with a Refresh Token flow. This is possible due to `sessions`. When a
+user logs in, a new session is created and stored in the database. The session record contains `sessionId (id)`,
+`userId`, and `hash`.
 
-On each `POST /api/v1/auth/refresh` request we check `hash` from the database with `hash` from the Refresh Token. If they are equal, we return new `token`, `tokenExpires`, and `refreshToken`. Then we update `hash` in the database to disallow the use of the previous Refresh Token.
+On each `POST /api/v1/auth/refresh` request we check `hash` from the database with `hash` from the Refresh Token. If
+they are equal, we return new `token`, `tokenExpires`, and `refreshToken`. Then we update `hash` in the database to
+disallow the use of the previous Refresh Token.
 
 ## Logout
 
@@ -174,9 +186,14 @@ On each `POST /api/v1/auth/refresh` request we check `hash` from the database wi
 
 ## Q&A
 
-### After `POST /api/v1/auth/logout` or removing session from the database, the user can still make requests with an `access token` for some time. Why?
+### After `POST /api/v1/auth/logout` or removing session from the database, the user can still make requests with an
+`access token` for some time. Why?
 
-It's because we use `JWT`. `JWTs` are stateless, so we can't revoke them, but don't worry, this is the correct behavior and the access token will expire after the time specified in `AUTH_JWT_TOKEN_EXPIRES_IN` (the default value is 15 minutes). If you still need to revoke `JWT` tokens immediately, you can check if a session exists in [jwt.strategy.ts](https://github.com/brocoders/nestjs-boilerplate/blob/2896589f52d2df025f12069ba82ba4fac1db8ebd/src/auth/strategies/jwt.strategy.ts#L20-L26) on each request. However, it's not recommended because it can affect the application's performance.
+It's because we use `JWT`. `JWTs` are stateless, so we can't revoke them, but don't worry, this is the correct behavior
+and the access token will expire after the time specified in `AUTH_JWT_TOKEN_EXPIRES_IN` (the default value is 15
+minutes). If you still need to revoke `JWT` tokens immediately, you can check if a session exists
+in [jwt.strategy.ts](https://github.com/brocoders/nestjs-boilerplate/blob/2896589f52d2df025f12069ba82ba4fac1db8ebd/src/auth/strategies/jwt.strategy.ts#L20-L26)
+on each request. However, it's not recommended because it can affect the application's performance.
 
 ---
 

@@ -10,11 +10,11 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 import { FileEntity } from '../../../../../files/infrastructure/persistence/relational/entities/file.entity';
 import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
-import { MemeAudience } from '../../../../memes.enum';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
+import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
+import { MemeAudience } from '../../../../memes.enum';
 
 @Entity({ name: 'memes' })
 export class MemeEntity extends EntityRelationalHelper {

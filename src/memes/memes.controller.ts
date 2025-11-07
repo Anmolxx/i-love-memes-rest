@@ -1,37 +1,37 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
-  SerializeOptions,
+  Param,
+  Patch,
+  Post,
   Query,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
-import { CreateMemeDto } from './dto/create-meme.dto';
-import { UpdateMemeDto } from './dto/update-meme.dto';
+import { AuthGuard } from '@nestjs/passport';
 import {
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiTags,
   ApiParam,
-  ApiBearerAuth,
+  ApiTags,
 } from '@nestjs/swagger';
-import { MemesService } from './memes.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../users/domain/user';
-import { AuthGuard } from '@nestjs/passport';
-import { Meme } from './domain/meme';
-import { MemeParamsDto } from './dto/meme-params.dto';
-import { MemeListQueryDto } from './dto/meme-list-query.dto';
-import { IPaginationOptions } from '../utils/types/pagination-options';
-import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { API_PAGE_LIMIT } from '../constants/common.constant';
+import { User } from '../users/domain/user';
 import { createResponse } from '../utils/base-response';
+import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
+import { IPaginationOptions } from '../utils/types/pagination-options';
+import { Meme } from './domain/meme';
+import { CreateMemeDto } from './dto/create-meme.dto';
+import { MemeListQueryDto } from './dto/meme-list-query.dto';
+import { MemeParamsDto } from './dto/meme-params.dto';
+import { UpdateMemeDto } from './dto/update-meme.dto';
+import { MemesService } from './memes.service';
 
 @ApiTags('Memes')
 @Controller({ path: 'memes', version: '1' })

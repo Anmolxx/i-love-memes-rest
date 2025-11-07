@@ -1,7 +1,7 @@
 import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
+import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
 import { Meme } from '../../../../domain/meme';
 import { MemeEntity } from '../entities/meme.entity';
-import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
 
 export class MemeMapper {
   static toDomain(raw: MemeEntity): Meme {
