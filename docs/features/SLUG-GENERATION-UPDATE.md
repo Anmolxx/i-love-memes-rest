@@ -2,7 +2,8 @@
 
 ## Overview
 
-Updated slug generation logic for both **Memes** and **Meme Templates** to ensure slugs are always unique, even when multiple records have the same title.
+Updated slug generation logic for both **Memes** and **Meme Templates** to ensure slugs are always unique, even when
+multiple records have the same title.
 
 ## Changes Made
 
@@ -173,7 +174,7 @@ CREATE TABLE templates (
 ### Memes
 
 | Rule                 | Before                    | After                                |
-| -------------------- | ------------------------- | ------------------------------------ |
+|----------------------|---------------------------|--------------------------------------|
 | **Title Uniqueness** | Required per user         | Not required                         |
 | **Slug Uniqueness**  | Required globally         | Required globally                    |
 | **Slug Generation**  | From title only           | From title + random suffix if needed |
@@ -183,7 +184,7 @@ CREATE TABLE templates (
 ### Templates
 
 | Rule                 | Before                     | After                                |
-| -------------------- | -------------------------- | ------------------------------------ |
+|----------------------|----------------------------|--------------------------------------|
 | **Title Uniqueness** | Required globally          | Not required                         |
 | **Slug Uniqueness**  | Required globally          | Required globally                    |
 | **Slug Generation**  | From title only            | From title + random suffix if needed |
@@ -284,7 +285,7 @@ POST /v1/templates
 ### Error Scenarios Table
 
 | Scenario           | Before                         | After                                  |
-| ------------------ | ------------------------------ | -------------------------------------- |
+|--------------------|--------------------------------|----------------------------------------|
 | Duplicate title    | 422 Error                      | Success with unique slug               |
 | Slug conflict      | N/A (prevented by title check) | Auto-resolved with random suffix       |
 | Generation failure | N/A                            | 500 SLUG_ERROR (fallback to timestamp) |
@@ -366,18 +367,18 @@ const slug = await generateUniqueSlug(title);
 ### Files Modified
 
 1. ✅ `docs/features/memes/feature-specification.md`
-   - Updated slug generation algorithm
-   - Updated business rules
-   - Updated database schema
-   - Updated error handling
-   - Removed title uniqueness validation
+    - Updated slug generation algorithm
+    - Updated business rules
+    - Updated database schema
+    - Updated error handling
+    - Removed title uniqueness validation
 
 2. ✅ `docs/features/meme-templates/feature-specification.md`
-   - Updated slug generation algorithm
-   - Updated business rules
-   - Updated database schema
-   - Updated update rules
-   - Removed title uniqueness requirement
+    - Updated slug generation algorithm
+    - Updated business rules
+    - Updated database schema
+    - Updated update rules
+    - Removed title uniqueness requirement
 
 ## Rollout Strategy
 
@@ -415,7 +416,8 @@ const slug = await generateUniqueSlug(title);
 
 ### Q: How do we handle slug collisions in distributed systems?
 
-**A**: Database uniqueness constraint provides ultimate protection. Race conditions result in retry with new random suffix
+**A**: Database uniqueness constraint provides ultimate protection. Race conditions result in retry with new random
+suffix
 
 ### Q: Can we regenerate slugs for existing content?
 

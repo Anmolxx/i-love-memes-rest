@@ -4,11 +4,15 @@
 
 ### Purpose & Scope
 
-The Meme Templates feature is the foundational system that defines the creative canvas and structure for meme creation. Templates act as reusable blueprints containing layers, layouts, and styling configurations that users customize to create unique memes.
+The Meme Templates feature is the foundational system that defines the creative canvas and structure for meme creation.
+Templates act as reusable blueprints containing layers, layouts, and styling configurations that users customize to
+create unique memes.
 
-**Business Objective**: Provide a flexible, scalable template system that enables rapid meme creation while maintaining design consistency and creative freedom.
+**Business Objective**: Provide a flexible, scalable template system that enables rapid meme creation while maintaining
+design consistency and creative freedom.
 
-**Manufacturing Impact**: This is a product design and configuration system that defines the "production specifications" for meme manufacturing. Templates are the master patterns from which all meme instances are derived.
+**Manufacturing Impact**: This is a product design and configuration system that defines the "production specifications"
+for meme manufacturing. Templates are the master patterns from which all meme instances are derived.
 
 ### Functional Boundaries
 
@@ -326,7 +330,7 @@ Then all layer IDs are unique
 ### Performance Requirements
 
 | Operation          | Target Response Time | Maximum Load |
-| ------------------ | -------------------- | ------------ |
+|--------------------|----------------------|--------------|
 | Create Template    | < 500ms              | 20 req/hour  |
 | Get Template by ID | < 150ms              | 1000 req/min |
 | List Templates     | < 250ms              | 500 req/min  |
@@ -1101,5 +1105,5 @@ async function publishTemplate(templateId: string): Promise<Template> {
 ## Changelog
 
 | Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
+|---------|------------|-------------------------------|
 | 1.0.0   | 2025-11-07 | Initial feature specification |

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Tag } from 'src/tags/domain/tag';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { IPaginationOptions } from 'src/utils/types/pagination-options';
 import { In, Repository } from 'typeorm';
@@ -7,7 +8,6 @@ import { In, Repository } from 'typeorm';
 import { TagEntity } from '../entities/tag.entity';
 import { TagMapper } from '../mapper/tag.mapper';
 import { TagRepository } from './tag.repository';
-import { Tag } from 'src/tags/domain/tag';
 
 @Injectable()
 export class TagRelationalRepository implements TagRepository {

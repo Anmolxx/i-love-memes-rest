@@ -1,6 +1,7 @@
 # Features Documentation
 
-This directory contains comprehensive feature specifications for the ILoveMemes platform. Each feature is documented with detailed requirements, API specifications, database schemas, and business logic.
+This directory contains comprehensive feature specifications for the ILoveMemes platform. Each feature is documented
+with detailed requirements, API specifications, database schemas, and business logic.
 
 ## Documentation Structure
 
@@ -498,7 +499,7 @@ All feature specifications follow these standards:
 ### Common Endpoints
 
 | Feature           | Base Path                | Authentication    |
-| ----------------- | ------------------------ | ----------------- |
+|-------------------|--------------------------|-------------------|
 | Authentication    | `/v1/auth`               | Public/Required   |
 | Users             | `/v1/users`              | Required          |
 | Memes             | `/v1/memes`              | Optional/Required |

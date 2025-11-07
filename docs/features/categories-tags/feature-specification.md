@@ -4,11 +4,15 @@
 
 ### Purpose & Scope
 
-The Categories & Tags feature provides a flexible taxonomy system for organizing and discovering memes, templates, and content across the ILoveMemes platform. This feature enables content classification, improved search capabilities, and enhanced user navigation.
+The Categories & Tags feature provides a flexible taxonomy system for organizing and discovering memes, templates, and
+content across the ILoveMemes platform. This feature enables content classification, improved search capabilities, and
+enhanced user navigation.
 
-**Business Objective**: Create an intuitive content organization system that improves content discoverability, enhances user experience, and supports content curation strategies.
+**Business Objective**: Create an intuitive content organization system that improves content discoverability, enhances
+user experience, and supports content curation strategies.
 
-**Manufacturing Impact**: This is a classification and inventory management system that enables efficient content categorization, similar to SKU classification in manufacturing systems.
+**Manufacturing Impact**: This is a classification and inventory management system that enables efficient content
+categorization, similar to SKU classification in manufacturing systems.
 
 ### Functional Boundaries
 
@@ -229,7 +233,7 @@ Root Categories:
 ### Performance Requirements
 
 | Operation        | Target Response Time | Maximum Load |
-| ---------------- | -------------------- | ------------ |
+|------------------|----------------------|--------------|
 | Create Tag       | < 100ms              | 50 req/min   |
 | Get Tag by ID    | < 50ms               | 1000 req/min |
 | List Tags        | < 150ms              | 500 req/min  |
@@ -979,5 +983,5 @@ async function suggestTags(
 ## Changelog
 
 | Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
+|---------|------------|-------------------------------|
 | 1.0.0   | 2025-11-07 | Initial feature specification |

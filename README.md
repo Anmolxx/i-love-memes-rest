@@ -4,7 +4,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-A comprehensive REST API backend for ILoveMemes — a meme generation and e-commerce platform that enables users to create, customize, share, and purchase custom meme products.
+A comprehensive REST API backend for ILoveMemes — a meme generation and e-commerce platform that enables users to
+create, customize, share, and purchase custom meme products.
 
 ---
 
@@ -57,7 +58,8 @@ A comprehensive REST API backend for ILoveMemes — a meme generation and e-comm
 
 ### What is ILoveMemes?
 
-ILoveMemes is a comprehensive meme generation and e-commerce platform that combines creative tools with print-on-demand capabilities. The platform enables users to:
+ILoveMemes is a comprehensive meme generation and e-commerce platform that combines creative tools with print-on-demand
+capabilities. The platform enables users to:
 
 - **Create**: Use a Fabric.js-based canvas editor to create custom memes from templates
 - **Customize**: Add text, stickers, images with full control over styling and positioning
@@ -67,7 +69,8 @@ ILoveMemes is a comprehensive meme generation and e-commerce platform that combi
 
 ### Backend Architecture
 
-This repository contains the NestJS-based REST API backend that powers the platform. The backend follows clean architecture principles with:
+This repository contains the NestJS-based REST API backend that powers the platform. The backend follows clean
+architecture principles with:
 
 - **Domain-Driven Design**: Core business logic isolated in domain models
 - **Repository Pattern**: Abstract data persistence layer for flexibility
@@ -78,7 +81,7 @@ This repository contains the NestJS-based REST API backend that powers the platf
 ### Technology Stack
 
 | Layer              | Technology      | Purpose                              |
-| ------------------ | --------------- | ------------------------------------ |
+|--------------------|-----------------|--------------------------------------|
 | **Framework**      | NestJS          | Enterprise-grade Node.js framework   |
 | **Language**       | TypeScript      | Type-safe application development    |
 | **Database**       | PostgreSQL      | Relational data persistence          |
@@ -127,23 +130,23 @@ This repository contains the NestJS-based REST API backend that powers the platf
 #### Layer Types
 
 1. **Text Layer**
-   - Editable text content
-   - Customizable properties:
-     - Font family, size, weight
-     - Color, stroke, shadow
-     - Background color/opacity
-     - Text alignment (left, center, right)
-     - Line height and letter spacing
-   - Transform controls (position, rotation, scale)
-   - Z-index for layering
+    - Editable text content
+    - Customizable properties:
+        - Font family, size, weight
+        - Color, stroke, shadow
+        - Background color/opacity
+        - Text alignment (left, center, right)
+        - Line height and letter spacing
+    - Transform controls (position, rotation, scale)
+    - Z-index for layering
 
 2. **Image Layer**
-   - Placeholder for user images
-   - Sticker library support
-   - Transform controls (position, rotation, scale)
-   - Opacity control
-   - Crop and fit options
-   - Z-index for layering
+    - Placeholder for user images
+    - Sticker library support
+    - Transform controls (position, rotation, scale)
+    - Opacity control
+    - Crop and fit options
+    - Z-index for layering
 
 #### Layer Transforms
 
@@ -229,7 +232,8 @@ This backend provides comprehensive REST APIs for:
 - Print-ready label generation for in-house production
 - Basic moderation (text/image filters) and analytics per template/meme
 
-The backend follows a modular NestJS structure (controllers, services, modules, repositories) and exposes REST endpoints consumed by:
+The backend follows a modular NestJS structure (controllers, services, modules, repositories) and exposes REST endpoints
+consumed by:
 
 - Meme editor frontend (Fabric.js-based canvas)
 - Admin dashboard (template/product/order management)
@@ -240,8 +244,8 @@ The backend follows a modular NestJS structure (controllers, services, modules, 
 - Admin: can create/manage meme templates, products, and view metrics.
 - Meme template: canvas layout created via the dedicated meme frontend; defines a set of Layers.
 - Layer: building block of a template; two types:
-  - Text Layer: editable text with font, color, stroke, shadow, background, alignment
-  - Image Layer: placeholder or sticker image
+    - Text Layer: editable text with font, color, stroke, shadow, background, alignment
+    - Image Layer: placeholder or sticker image
 - Layer transforms: move, rotate, scale. Frontend uses Fabric.js to manage canvas/layers.
 - Meme instance: a user-generated image produced by filling Text/Image layers and exporting.
 - Product: mapping of a meme to a printable product (mockups such as candy tubes, candles, greeting cards).
@@ -264,41 +268,42 @@ The backend follows a modular NestJS structure (controllers, services, modules, 
 ## Example API routes (browse-focused)
 
 - GET /meme-templates
-  - List available meme templates (pagination, search, filters)
+    - List available meme templates (pagination, search, filters)
 
 - GET /memes
-  - Browse user-generated memes (default: latest first, pagination)
+    - Browse user-generated memes (default: latest first, pagination)
 - GET /memes?sort=oldest
-  - Browse oldest-first
+    - Browse oldest-first
 - GET /memes/{template-slug}
-  - List memes created from a specific template
+    - List memes created from a specific template
 - GET /memes/trending
-  - Memes considered "trending" by backend scoring logic (time-window + popularity)
+    - Memes considered "trending" by backend scoring logic (time-window + popularity)
 - GET /memes/most-upvoted
-  - Memes sorted desc by upvotes
+    - Memes sorted desc by upvotes
 - GET /memes/least-downvoted
-  - Memes sorted asc by downvotes
+    - Memes sorted asc by downvotes
 - GET /memes/tag/{tag}
-  - Memes filtered by tag (e.g., /memes/tag/happy, /memes/tag/nsfw)
+    - Memes filtered by tag (e.g., /memes/tag/happy, /memes/tag/nsfw)
 
 Interaction and content routes:
 
 - POST /memes/{id}/interactions
-  - Body: { type: "upvote"|"downvote"|"report"|"flag", note?: string }
-  - Some interaction types require a note (e.g., report), others do not.
-  - Authenticated users only.
+    - Body: { type: "upvote"|"downvote"|"report"|"flag", note?: string }
+    - Some interaction types require a note (e.g., report), others do not.
+    - Authenticated users only.
 - POST /memes/{id}/comments
-  - Add a comment (auth required)
+    - Add a comment (auth required)
 - POST /meme-templates (admin)
-  - Create a template (metadata + asset references)
+    - Create a template (metadata + asset references)
 - POST /memes
-  - Create a meme instance (payload: filled layers). Backend returns exported image URL and variant for product preview.
+    - Create a meme instance (payload: filled layers). Backend returns exported image URL and variant for product
+      preview.
 
 Product and checkout:
 
 - POST /products (admin)
 - GET /products/{id}/preview?memeId={m}
-  - Returns product mockup with meme applied
+    - Returns product mockup with meme applied
 - POST /checkout (Shopify/Stripe integration)
 
 ## Authentication & interactions
@@ -312,7 +317,8 @@ Product and checkout:
 
 - Key metrics: memes created per-template, upvotes/downvotes per meme, trending score.
 - Admin endpoints allow time-windowed queries (e.g., number of memes created in last 7/30 days).
-- Usage of background workers (or queue) is recommended for expensive tasks: image rendering, label generation, Shopify webhooks.
+- Usage of background workers (or queue) is recommended for expensive tasks: image rendering, label generation, Shopify
+  webhooks.
 
 ## Quick Start (local development)
 

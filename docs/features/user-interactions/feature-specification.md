@@ -4,11 +4,15 @@
 
 ### Purpose & Scope
 
-The User Interactions feature enables community engagement through voting, reporting, and content moderation mechanisms. This feature allows users to express opinions, flag inappropriate content, and contribute to content quality through various interaction types.
+The User Interactions feature enables community engagement through voting, reporting, and content moderation mechanisms.
+This feature allows users to express opinions, flag inappropriate content, and contribute to content quality through
+various interaction types.
 
-**Business Objective**: Build an engaged community by enabling users to interact with content through voting and reporting mechanisms, while maintaining content quality through community-driven moderation.
+**Business Objective**: Build an engaged community by enabling users to interact with content through voting and
+reporting mechanisms, while maintaining content quality through community-driven moderation.
 
-**Manufacturing Impact**: This is a quality control and feedback system that enables user-driven content evaluation and continuous improvement, similar to quality assurance checkpoints in manufacturing.
+**Manufacturing Impact**: This is a quality control and feedback system that enables user-driven content evaluation and
+continuous improvement, similar to quality assurance checkpoints in manufacturing.
 
 ### Functional Boundaries
 
@@ -334,7 +338,7 @@ Then a list of their interactions is returned
 ### Performance Requirements
 
 | Operation                | Target Response Time | Maximum Load         |
-| ------------------------ | -------------------- | -------------------- |
+|--------------------------|----------------------|----------------------|
 | Create Upvote            | < 100ms              | 500 req/min per user |
 | Create Downvote          | < 100ms              | 500 req/min per user |
 | Create Report            | < 150ms              | 10 req/min per user  |
@@ -349,8 +353,8 @@ Then a list of their interactions is returned
 - **Authentication**: All interactions require JWT authentication
 - **Authorization**: Users can only manage their own interactions
 - **Rate Limiting**: Prevent interaction spam
-  - Max 10 interactions per minute per user
-  - Max 5 reports per hour per user
+    - Max 10 interactions per minute per user
+    - Max 5 reports per hour per user
 - **Input Validation**: All inputs sanitized and validated
 - **XSS Prevention**: Escape user-provided notes
 - **Duplicate Prevention**: Unique constraint on user-meme-type
@@ -1124,7 +1128,7 @@ async function checkInteractionRateLimit(
 ### Error Scenarios
 
 | Scenario                      | HTTP Status | Error Code       | Message                                    |
-| ----------------------------- | ----------- | ---------------- | ------------------------------------------ |
+|-------------------------------|-------------|------------------|--------------------------------------------|
 | Unauthenticated               | 401         | UNAUTHORIZED     | User not authenticated                     |
 | Cannot interact with own meme | 403         | FORBIDDEN        | Cannot interact with your own meme         |
 | Meme not found                | 404         | NOT_FOUND        | Meme not found                             |
@@ -1208,5 +1212,5 @@ async function checkInteractionRateLimit(
 ## Changelog
 
 | Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
+|---------|------------|-------------------------------|
 | 1.0.0   | 2025-11-07 | Initial feature specification |

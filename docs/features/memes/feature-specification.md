@@ -4,11 +4,15 @@
 
 ### Purpose & Scope
 
-The Memes feature is the core content creation and management system of the ILoveMemes platform. It enables users to create, store, manage, and share meme instances generated from templates. This feature serves as the bridge between template-based creation and community engagement.
+The Memes feature is the core content creation and management system of the ILoveMemes platform. It enables users to
+create, store, manage, and share meme instances generated from templates. This feature serves as the bridge between
+template-based creation and community engagement.
 
-**Business Objective**: Enable users to express creativity through meme creation while building a robust content library that drives community engagement and e-commerce conversions.
+**Business Objective**: Enable users to express creativity through meme creation while building a robust content library
+that drives community engagement and e-commerce conversions.
 
-**Manufacturing Impact**: This is a content production system that processes user-generated content at scale, requiring efficient storage, retrieval, and rendering capabilities.
+**Manufacturing Impact**: This is a content production system that processes user-generated content at scale, requiring
+efficient storage, retrieval, and rendering capabilities.
 
 ### Functional Boundaries
 
@@ -197,7 +201,7 @@ Then the meme is visible to all users
 ### Performance Requirements
 
 | Operation              | Target Response Time | Maximum Load         |
-| ---------------------- | -------------------- | -------------------- |
+|------------------------|----------------------|----------------------|
 | Create Meme            | < 300ms              | 100 req/min per user |
 | Get Meme by ID         | < 100ms              | 1000 req/min         |
 | List Memes (Paginated) | < 200ms              | 500 req/min          |
@@ -596,25 +600,26 @@ await generateUniqueSlug("Hello!!! World???");
 When a meme is created or updated:
 
 1. **New File Association**:
-   - Verify file exists
-   - Check file status is TEMPORARY
-   - Update file status to PERMANENT
-   - Create meme-file relationship
+    - Verify file exists
+    - Check file status is TEMPORARY
+    - Update file status to PERMANENT
+    - Create meme-file relationship
 
 2. **File Replacement**:
-   - Mark old file as TEMPORARY
-   - Verify new file exists
-   - Update new file to PERMANENT
-   - Update meme-file relationship
+    - Mark old file as TEMPORARY
+    - Verify new file exists
+    - Update new file to PERMANENT
+    - Update meme-file relationship
 
 3. **Meme Deletion**:
-   - Soft delete meme (set deletedAt)
-   - Mark associated file as TEMPORARY
-   - File cleanup handled by background job
+    - Soft delete meme (set deletedAt)
+    - Mark associated file as TEMPORARY
+    - File cleanup handled by background job
 
 ### Title Uniqueness Validation
 
-**Note**: With unique slug generation, titles no longer need to be unique. Multiple memes can have the same title, but each will have a unique slug.
+**Note**: With unique slug generation, titles no longer need to be unique. Multiple memes can have the same title, but
+each will have a unique slug.
 
 ```typescript
 // Title validation is now optional - slugs handle uniqueness
@@ -657,7 +662,7 @@ function canViewMeme(user: User | null, meme: Meme): boolean {
 ### Error Scenarios
 
 | Scenario                             | HTTP Status | Error Code       | Message                                 |
-| ------------------------------------ | ----------- | ---------------- | --------------------------------------- |
+|--------------------------------------|-------------|------------------|-----------------------------------------|
 | Unauthenticated create/update/delete | 401         | UNAUTHORIZED     | User not authenticated                  |
 | Unauthorized update/delete           | 403         | FORBIDDEN        | You are not allowed to modify this meme |
 | Meme not found                       | 404         | NOT_FOUND        | Meme not found                          |
@@ -787,5 +792,5 @@ function canViewMeme(user: User | null, meme: Meme): boolean {
 ## Changelog
 
 | Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
+|---------|------------|-------------------------------|
 | 1.0.0   | 2025-11-07 | Initial feature specification |

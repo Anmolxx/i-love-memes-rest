@@ -4,11 +4,14 @@
 
 ### Purpose & Scope
 
-The Comments feature enables users to engage in discussions around memes through threaded conversations. This feature supports community building, content feedback, and user engagement through text-based interactions.
+The Comments feature enables users to engage in discussions around memes through threaded conversations. This feature
+supports community building, content feedback, and user engagement through text-based interactions.
 
-**Business Objective**: Foster community engagement and increase user retention through meaningful conversations around meme content.
+**Business Objective**: Foster community engagement and increase user retention through meaningful conversations around
+meme content.
 
-**Manufacturing Impact**: This is a feedback and communication system that enables collaborative quality improvement and knowledge sharing, similar to production notes and improvement suggestions in manufacturing processes.
+**Manufacturing Impact**: This is a feedback and communication system that enables collaborative quality improvement and
+knowledge sharing, similar to production notes and improvement suggestions in manufacturing processes.
 
 ### Functional Boundaries
 
@@ -307,7 +310,7 @@ Then the mentioned user is detected
 ### Performance Requirements
 
 | Operation           | Target Response Time | Maximum Load         |
-| ------------------- | -------------------- | -------------------- |
+|---------------------|----------------------|----------------------|
 | Create Comment      | < 200ms              | 100 req/min per user |
 | Get Meme Comments   | < 250ms              | 1000 req/min         |
 | Get Comment Replies | < 150ms              | 500 req/min          |
@@ -321,8 +324,8 @@ Then the mentioned user is detected
 - **Authorization**: Users can only edit/delete their own comments
 - **Input Validation**: Content sanitized for XSS prevention
 - **Rate Limiting**:
-  - Max 10 comments per minute per user
-  - Max 5 edits per hour per user
+    - Max 10 comments per minute per user
+    - Max 5 edits per hour per user
 - **Profanity Filter**: Automatic content filtering
 - **Spam Detection**: Pattern-based spam detection
 
@@ -1242,5 +1245,5 @@ async function checkCommentReportThreshold(commentId: string): Promise<void> {
 ## Changelog
 
 | Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
+|---------|------------|-------------------------------|
 | 1.0.0   | 2025-11-07 | Initial feature specification |

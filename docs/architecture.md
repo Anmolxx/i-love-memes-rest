@@ -103,11 +103,11 @@ export class UsersRelationalRepository implements UserRepository {
   async findByEmail(email: string): Promise<User> {
     // ...
   }
-  
+
   async findByRoles(roles: string[]): Promise<User> {
     // ...
   }
-  
+
   async findByIds(ids: string[]): Promise<User> {
     // ...
   }

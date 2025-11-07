@@ -4,11 +4,15 @@
 
 ### Purpose & Scope
 
-The Enhanced Meme Tags feature provides a dynamic, flexible tagging system for memes and meme templates. This system enables content organization, discovery, and categorization through user-generated and system-managed tags with automatic tag creation capabilities.
+The Enhanced Meme Tags feature provides a dynamic, flexible tagging system for memes and meme templates. This system
+enables content organization, discovery, and categorization through user-generated and system-managed tags with
+automatic tag creation capabilities.
 
-**Business Objective**: Improve content discoverability and user engagement through flexible, community-driven tagging while maintaining content quality through tag moderation.
+**Business Objective**: Improve content discoverability and user engagement through flexible, community-driven tagging
+while maintaining content quality through tag moderation.
 
-**Manufacturing Impact**: This is analogous to dynamic work order classification and product categorization systems in manufacturing, where items can be tagged with multiple attributes for better tracking, sorting, and retrieval.
+**Manufacturing Impact**: This is analogous to dynamic work order classification and product categorization systems in
+manufacturing, where items can be tagged with multiple attributes for better tracking, sorting, and retrieval.
 
 ### Functional Boundaries
 
@@ -102,7 +106,8 @@ interface TagDto {
 
 **Priority**: Critical
 
-**Description**: Tags must be normalized to prevent duplicates (e.g., "Funny Cat", "funny-cat", "FUNNY CAT" → "funny cat").
+**Description**: Tags must be normalized to prevent duplicates (e.g., "Funny Cat", "funny-cat", "FUNNY CAT" → "funny
+cat").
 
 **Acceptance Criteria**:
 
@@ -340,7 +345,7 @@ Then the tag status is set to BLACKLISTED
 ### Performance Requirements
 
 | Operation               | Target Response Time | Maximum Load |
-| ----------------------- | -------------------- | ------------ |
+|-------------------------|----------------------|--------------|
 | Tag Search/Autocomplete | < 100ms              | 1000 req/min |
 | Create Tag              | < 150ms              | 200 req/min  |
 | Tag Content             | < 200ms              | 500 req/min  |
@@ -1299,5 +1304,5 @@ async function calculateTrendingScore(tag: Tag): Promise<number> {
 ## Changelog
 
 | Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
+|---------|------------|-------------------------------|
 | 1.0.0   | 2025-11-07 | Initial feature specification |

@@ -187,6 +187,7 @@ disallow the use of the previous Refresh Token.
 ## Q&A
 
 ### After `POST /api/v1/auth/logout` or removing session from the database, the user can still make requests with an
+
 `access token` for some time. Why?
 
 It's because we use `JWT`. `JWTs` are stateless, so we can't revoke them, but don't worry, this is the correct behavior
