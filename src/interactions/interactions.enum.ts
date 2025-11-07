@@ -1,0 +1,16 @@
+export enum InteractionType {
+  UPVOTE = 'UPVOTE',
+  DOWNVOTE = 'DOWNVOTE',
+  REPORT = 'REPORT',
+  FLAG = 'FLAG',
+}
+
+export enum ReportReason {
+  SPAM = 'SPAM',
+  INAPPROPRIATE = 'INAPPROPRIATE',
+  COPYRIGHT = 'COPYRIGHT',
+  NSFW = 'NSFW',
+  HARASSMENT = 'HARASSMENT',
+  VIOLENCE = 'VIOLENCE',
+  OTHER = 'OTHER',
+}

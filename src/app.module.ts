@@ -19,6 +19,7 @@ import { TypeOrmConfigService } from './database/typeorm-config.service';
 import fileConfig from './files/config/file.config';
 import { FilesModule } from './files/files.module';
 import { HomeModule } from './home/home.module';
+import { InteractionsModule } from './interactions/interactions.module';
 import mailConfig from './mail/config/mail.config';
 import { MailModule } from './mail/mail.module';
 import { MailerModule } from './mailer/mailer.module';
@@ -88,6 +89,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     MemesModule,
     TemplateModule,
     TagsModule,
+    InteractionsModule,
   ],
 })
 export class AppModule {}
