@@ -1,0 +1,158 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Comment } from 'src/comments/domain/comment';
+import { NullableType } from 'src/utils/types/nullable.type';
+import { CommentStatus } from './comments.enum';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { QueryCommentDto } from './dto/query-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
+import { CommentRepository } from './infrastructure/persistence/comment.repository';
+
+const MAX_COMMENT_DEPTH = 5;
+const EDIT_WINDOW_HOURS = 24;
+
+@Injectable()
+export class CommentsService {
+  constructor(private readonly commentRepository: CommentRepository) {}
+
+  async create(createCommentDto: CreateCommentDto, userId: string) {
+    const { content, memeId, parentCommentId } = createCommentDto;
+
+    let depth = 0;
+    let parentComment: NullableType<Comment> = null;
+
+    if (parentCommentId) {
+      parentComment = await this.commentRepository.findById(parentCommentId);
+
+      if (!parentComment) {
+        throw new NotFoundException('Parent comment not found');
+      }
+
+      if (parentComment.status === CommentStatus.DELETED) {
+        throw new BadRequestException('Cannot reply to deleted comment');
+      }
+
+      depth = parentComment.depth + 1;
+
+      if (depth > MAX_COMMENT_DEPTH) {
+        throw new BadRequestException(
+          `Maximum comment depth of ${MAX_COMMENT_DEPTH} exceeded`,
+        );
+      }
+    }
+
+    const comment = await this.commentRepository.create({
+      content,
+      meme: { id: memeId } as any,
+      author: { id: userId } as any,
+      parentComment: parentCommentId
+        ? ({ id: parentCommentId } as Partial<Comment>)
+        : null,
+      replyCount: 0,
+      depth,
+      status: CommentStatus.ACTIVE,
+    } as any);
+
+    // Increment parent's reply count
+    if (parentCommentId) {
+      await this.commentRepository.incrementReplyCount(parentCommentId);
+    }
+
+    return comment;
+  }
+
+  async findByMeme(memeId: string, query: QueryCommentDto) {
+    return this.commentRepository.findByMeme({
+      memeId,
+      paginationOptions: {
+        page: query.page || 1,
+        limit: query.limit || 10,
+      },
+      sortBy: query.sortBy,
+    });
+  }
+
+  async findReplies(parentCommentId: string, query: QueryCommentDto) {
+    const parentComment =
+      await this.commentRepository.findById(parentCommentId);
+
+    if (!parentComment) {
+      throw new NotFoundException('Parent comment not found');
+    }
+
+    return this.commentRepository.findReplies({
+      parentCommentId,
+      paginationOptions: {
+        page: query.page || 1,
+        limit: query.limit || 10,
+      },
+    });
+  }
+
+  async findOne(id: string) {
+    const comment = await this.commentRepository.findById(id);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    return comment;
+  }
+
+  async update(id: string, updateCommentDto: UpdateCommentDto, userId: string) {
+    const comment = await this.commentRepository.findById(id);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.author.id !== userId) {
+      throw new UnauthorizedException('You can only edit your own comments');
+    }
+
+    // Check edit window
+    const now = new Date();
+    const createdAt = new Date(comment.createdAt);
+    const hoursSinceCreation =
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSinceCreation > EDIT_WINDOW_HOURS) {
+      throw new BadRequestException(
+        `Comments can only be edited within ${EDIT_WINDOW_HOURS} hours`,
+      );
+    }
+
+    const updatedComment = await this.commentRepository.update(id, {
+      content: updateCommentDto.content,
+      status: CommentStatus.EDITED,
+      editedAt: now,
+    } as any);
+
+    return updatedComment;
+  }
+
+  async remove(id: string, userId: string) {
+    const comment = await this.commentRepository.findById(id);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.author.id !== userId) {
+      throw new UnauthorizedException('You can only delete your own comments');
+    }
+
+    await this.commentRepository.remove(id);
+
+    // Decrement parent's reply count if applicable
+    if (comment.parentComment) {
+      await this.commentRepository.decrementReplyCount(
+        comment.parentComment.id,
+      );
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HeaderResolver, I18nModule } from 'nestjs-i18n';
 import path from 'path';
+import { CommentsModule } from 'src/comments/comments.module';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { AuthAppleModule } from './auth-apple/auth-apple.module';
 import appleConfig from './auth-apple/config/apple.config';
@@ -90,6 +91,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     TemplateModule,
     TagsModule,
     InteractionsModule,
+    CommentsModule,
   ],
 })
 export class AppModule {}
