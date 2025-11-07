@@ -4,9 +4,9 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import slugify from 'slugify';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 import { FilesService } from '../files/files.service';
+import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
 import {
   IFilterOptions,
   IPaginationOptions,
@@ -38,13 +38,11 @@ export class TemplateService {
       );
     }
 
-    const slug = slugify(createTemplateDto.title, {
-      replacement: '-',
-      remove: undefined,
-      lower: false,
-      strict: false,
-      locale: 'vi',
-      trim: true,
+    // Automated unique slug generation
+    const baseSlug = generateBaseSlug(createTemplateDto.title);
+    const slug = await generateUniqueSlug(baseSlug, async (slug) => {
+      const found = await this.templateRepository.findBySlug(slug);
+      return !!found;
     });
     const template = await this.templateRepository.create(
       createTemplateDto,
@@ -59,6 +57,24 @@ export class TemplateService {
     if (!template) {
       throw new NotFoundException('Template not found with given template id');
     }
+    return TemplateMapper.toDomain(template);
+  }
+
+  async findOne(slugOrId: string): Promise<Template> {
+    // Try to find by slug first (more user-friendly)
+    let template = await this.templateRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!template) {
+      template = await this.templateRepository.getById(slugOrId);
+    }
+
+    if (!template) {
+      throw new NotFoundException(
+        `Template with identifier ${slugOrId} not found`,
+      );
+    }
+
     return TemplateMapper.toDomain(template);
   }
 
@@ -94,11 +110,17 @@ export class TemplateService {
   }
 
   async update(
-    id: string,
+    slugOrId: string,
     updateTemplateDto: UpdateTemplateDto,
     user: JwtPayloadType,
   ): Promise<TemplateEntity> {
-    const existingTemplate = await this.templateRepository.getById(id);
+    // Try to find by slug first
+    let existingTemplate = await this.templateRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!existingTemplate) {
+      existingTemplate = await this.templateRepository.getById(slugOrId);
+    }
 
     if (!existingTemplate) {
       throw new NotFoundException('Template not found');
@@ -126,13 +148,12 @@ export class TemplateService {
         );
       }
 
-      slug = slugify(updateTemplateDto.title, {
-        replacement: '-',
-        remove: undefined,
-        lower: false,
-        strict: false,
-        locale: 'vi',
-        trim: true,
+      // Automated unique slug generation for update
+      const baseSlug = generateBaseSlug(updateTemplateDto.title);
+      slug = await generateUniqueSlug(baseSlug, async (slug) => {
+        const found = await this.templateRepository.findBySlug(slug);
+        // Allow current template's slug
+        return !!found && found.id !== existingTemplate.id;
       });
     }
 
@@ -145,17 +166,25 @@ export class TemplateService {
 
     const updatedTemplate = await this.templateRepository.update(
       updateData,
-      id,
+      existingTemplate.id,
     );
 
     return updatedTemplate;
   }
 
-  async delete(id: Template['id']) {
-    const isExist = await this.templateRepository.getById(id);
-    if (!isExist) {
-      throw new NotFoundException('Template not found with given template id');
+  async delete(slugOrId: string) {
+    // Try to find by slug first
+    let template = await this.templateRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!template) {
+      template = await this.templateRepository.getById(slugOrId);
     }
-    await this.templateRepository.softDelete(id);
+
+    if (!template) {
+      throw new NotFoundException('Template not found with given identifier');
+    }
+
+    await this.templateRepository.softDelete(template.id);
   }
 }

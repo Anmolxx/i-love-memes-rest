@@ -9,6 +9,7 @@ import { FileType } from '../files/domain/file';
 import { FileStatus } from '../files/file.enum';
 import { FilesService } from '../files/files.service';
 import { User } from '../users/domain/user';
+import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
 import { CreateMemeDto } from './dto/create-meme.dto';
@@ -70,14 +71,12 @@ export class MemesService {
       file = fileObject;
     }
 
-    const baseSlug = (createMemeDto.title || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-
-    const slug = baseSlug;
+    // Automated unique slug generation
+    const baseSlug = generateBaseSlug(createMemeDto.title);
+    const slug = await generateUniqueSlug(baseSlug, async (slug) => {
+      const found = await this.memesRepository.findBySlug(slug);
+      return !!found;
+    });
 
     const meme: Partial<Meme> = {
       title: createMemeDto.title,
@@ -114,8 +113,31 @@ export class MemesService {
     return this.memesRepository.findById(id);
   }
 
-  async update(id: Meme['id'], updateMemeDto: UpdateMemeDto, user: User) {
-    const existingMeme = await this.memesRepository.findById(id);
+  async findOne(slugOrId: string): Promise<Meme> {
+    // Try to find by slug first (more user-friendly)
+    let meme = await this.memesRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!meme) {
+      meme = await this.memesRepository.findById(slugOrId);
+    }
+
+    if (!meme) {
+      throw new NotFoundException(`Meme with identifier ${slugOrId} not found`);
+    }
+
+    return meme;
+  }
+
+  async update(slugOrId: string, updateMemeDto: UpdateMemeDto, user: User) {
+    // Try to find by slug first
+    let existingMeme = await this.memesRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!existingMeme) {
+      existingMeme = await this.memesRepository.findById(slugOrId);
+    }
+
     if (!existingMeme) {
       throw new NotFoundException('Meme Not Found');
     }
@@ -163,17 +185,15 @@ export class MemesService {
 
     let slug: string | undefined = undefined;
     if (updateMemeDto.title) {
-      const baseSlug = (updateMemeDto.title || '')
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
-      slug = baseSlug;
+      const baseSlug = generateBaseSlug(updateMemeDto.title);
+      slug = await generateUniqueSlug(baseSlug, async (slug) => {
+        const found = await this.memesRepository.findBySlug(slug);
+        // Allow current meme's slug
+        return !!found && found.id !== existingMeme.id;
+      });
     }
 
-    return this.memesRepository.update(id, {
+    return this.memesRepository.update(existingMeme.id, {
       title: updateMemeDto.title,
       slug,
       description: updateMemeDto.description ?? undefined,
@@ -182,8 +202,15 @@ export class MemesService {
     } as Meme);
   }
 
-  async remove(id: Meme['id'], user: User): Promise<void> {
-    const meme = await this.memesRepository.findById(id);
+  async remove(slugOrId: string, user: User): Promise<void> {
+    // Try to find by slug first
+    let meme = await this.memesRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!meme) {
+      meme = await this.memesRepository.findById(slugOrId);
+    }
+
     if (!meme) {
       throw new NotFoundException();
     }
@@ -197,7 +224,7 @@ export class MemesService {
 
     await this.filesService.updateStatus(meme.file.id, FileStatus.TEMPORARY);
 
-    await this.memesRepository.remove(id);
+    await this.memesRepository.remove(meme.id);
   }
 
   async findMyMemes(user: User): Promise<Meme[]> {

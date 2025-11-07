@@ -42,11 +42,18 @@ export class CommentsController {
     return this.commentsService.create(createCommentDto, request.user.id);
   }
 
-  @Get('memes/:memeId')
-  @ApiParam({ name: 'memeId', type: String })
+  @Get('memes/:slugOrId')
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    description: 'Meme slug or UUID',
+  })
   @ApiOkResponse({ type: [Comment] })
-  findByMeme(@Param('memeId') memeId: string, @Query() query: QueryCommentDto) {
-    return this.commentsService.findByMeme(memeId, query);
+  findByMeme(
+    @Param('slugOrId') slugOrId: string,
+    @Query() query: QueryCommentDto,
+  ) {
+    return this.commentsService.findByMeme(slugOrId, query);
   }
 
   @Get(':id/replies')

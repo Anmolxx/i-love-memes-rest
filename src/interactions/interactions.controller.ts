@@ -49,29 +49,37 @@ export class InteractionsController {
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @Delete('memes/:memeId')
-  @ApiParam({ name: 'memeId', type: String })
+  @Delete('memes/:slugOrId')
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    description: 'Meme slug or UUID',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
-    @Param('memeId') memeId: string,
+    @Param('slugOrId') slugOrId: string,
     @Query('type') type: InteractionType,
     @Request() request,
   ) {
     return this.interactionsService.removeInteraction(
-      memeId,
+      slugOrId,
       request.user.id,
       type,
     );
   }
 
-  @Get('memes/:memeId/summary')
-  @ApiParam({ name: 'memeId', type: String })
+  @Get('memes/:slugOrId/summary')
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    description: 'Meme slug or UUID',
+  })
   @ApiOkResponse({ type: InteractionSummaryDto })
   getMemeInteractions(
-    @Param('memeId') memeId: string,
+    @Param('slugOrId') slugOrId: string,
     @Query('userId') userId?: string,
   ) {
-    return this.interactionsService.getMemeInteractions(memeId, userId);
+    return this.interactionsService.getMemeInteractions(slugOrId, userId);
   }
 
   @ApiBearerAuth()

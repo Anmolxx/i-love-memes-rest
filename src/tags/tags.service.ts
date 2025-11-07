@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
 import { Tag } from './domain/tag';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { FindOrCreateTagsDto } from './dto/find-or-create-tags.dto';
@@ -12,7 +13,7 @@ export class TagsService {
   constructor(private readonly tagRepository: TagRepository) {}
 
   async create(createTagDto: CreateTagDto): Promise<Tag> {
-    const { normalized, slug } = this.normalizeTagName(createTagDto.name);
+    const { normalized } = this.normalizeTagName(createTagDto.name);
 
     // Check if tag already exists
     const existingTag =
@@ -20,6 +21,13 @@ export class TagsService {
     if (existingTag) {
       return existingTag;
     }
+
+    // Automated unique slug generation
+    const baseSlug = generateBaseSlug(createTagDto.name);
+    const slug = await generateUniqueSlug(baseSlug, async (slug) => {
+      const found = await this.tagRepository.findBySlug(slug);
+      return !!found;
+    });
 
     const tag = await this.tagRepository.create({
       name: createTagDto.name,
@@ -38,11 +46,16 @@ export class TagsService {
     const tags: Tag[] = [];
 
     for (const name of findOrCreateDto.names) {
-      const { normalized, slug } = this.normalizeTagName(name);
+      const { normalized } = this.normalizeTagName(name);
 
       let tag = await this.tagRepository.findByNormalizedName(normalized);
 
       if (!tag) {
+        const baseSlug = generateBaseSlug(name);
+        const slug = await generateUniqueSlug(baseSlug, async (slug) => {
+          const found = await this.tagRepository.findBySlug(slug);
+          return !!found;
+        });
         tag = await this.tagRepository.create({
           name,
           normalizedName: normalized,
@@ -69,10 +82,17 @@ export class TagsService {
     });
   }
 
-  async findOne(id: string): Promise<Tag> {
-    const tag = await this.tagRepository.findById(id);
+  async findOne(slugOrId: string): Promise<Tag> {
+    // Try to find by slug first (more user-friendly)
+    let tag = await this.tagRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
     if (!tag) {
-      throw new NotFoundException(`Tag with id ${id} not found`);
+      tag = await this.tagRepository.findById(slugOrId);
+    }
+
+    if (!tag) {
+      throw new NotFoundException(`Tag with identifier ${slugOrId} not found`);
     }
     return tag;
   }
@@ -96,18 +116,32 @@ export class TagsService {
     return allTags.filter((tag) => tag.normalizedName.includes(normalized));
   }
 
-  async update(id: string, updateTagDto: UpdateTagDto): Promise<Tag> {
-    const tag = await this.tagRepository.findById(id);
+  async update(slugOrId: string, updateTagDto: UpdateTagDto): Promise<Tag> {
+    // Try to find by slug first
+    let tag = await this.tagRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
     if (!tag) {
-      throw new NotFoundException(`Tag with id ${id} not found`);
+      tag = await this.tagRepository.findById(slugOrId);
+    }
+
+    if (!tag) {
+      throw new NotFoundException(`Tag with identifier ${slugOrId} not found`);
     }
 
     const updateData: Partial<Tag> = {};
 
     if (updateTagDto.name) {
-      const { normalized, slug } = this.normalizeTagName(updateTagDto.name);
+      const { normalized } = this.normalizeTagName(updateTagDto.name);
       updateData.name = updateTagDto.name;
       updateData.normalizedName = normalized;
+      // Automated unique slug generation for update
+      const baseSlug = generateBaseSlug(updateTagDto.name);
+      const slug = await generateUniqueSlug(baseSlug, async (slug) => {
+        const found = await this.tagRepository.findBySlug(slug);
+        // Allow current tag's slug
+        return !!found && found.id !== tag.id;
+      });
       updateData.slug = slug;
     }
 
@@ -123,21 +157,28 @@ export class TagsService {
       updateData.status = updateTagDto.status;
     }
 
-    const updatedTag = await this.tagRepository.update(id, updateData);
+    const updatedTag = await this.tagRepository.update(tag.id, updateData);
     if (!updatedTag) {
-      throw new NotFoundException(`Tag with id ${id} not found`);
+      throw new NotFoundException(`Tag with id ${tag.id} not found`);
     }
 
     return updatedTag;
   }
 
-  async remove(id: string): Promise<void> {
-    const tag = await this.tagRepository.findById(id);
+  async remove(slugOrId: string): Promise<void> {
+    // Try to find by slug first
+    let tag = await this.tagRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
     if (!tag) {
-      throw new NotFoundException(`Tag with id ${id} not found`);
+      tag = await this.tagRepository.findById(slugOrId);
     }
 
-    await this.tagRepository.remove(id);
+    if (!tag) {
+      throw new NotFoundException(`Tag with identifier ${slugOrId} not found`);
+    }
+
+    await this.tagRepository.remove(tag.id);
   }
 
   async incrementUsage(id: string): Promise<void> {

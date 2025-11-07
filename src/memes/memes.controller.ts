@@ -29,7 +29,6 @@ import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
 import { CreateMemeDto } from './dto/create-meme.dto';
 import { MemeListQueryDto } from './dto/meme-list-query.dto';
-import { MemeParamsDto } from './dto/meme-params.dto';
 import { UpdateMemeDto } from './dto/update-meme.dto';
 import { MemesService } from './memes.service';
 
@@ -108,11 +107,16 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: Meme })
-  @Get(':memeId')
+  @Get(':slugOrId')
   @HttpCode(HttpStatus.OK)
-  @ApiParam({ name: 'memeId', type: String, required: true })
-  async findOne(@Param() params: MemeParamsDto) {
-    const meme = await this.memesService.findById(params.memeId);
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    required: true,
+    description: 'Meme slug or ID',
+  })
+  async findOne(@Param('slugOrId') slugOrId: string) {
+    const meme = await this.memesService.findOne(slugOrId);
     console.log(meme);
     return {
       success: true,
@@ -125,15 +129,20 @@ export class MemesController {
   @ApiBearerAuth()
   @SerializeOptions({ groups: ['admin'] })
   @UseGuards(AuthGuard('jwt'))
-  @Patch(':memeId')
+  @Patch(':slugOrId')
   @HttpCode(HttpStatus.OK)
-  @ApiParam({ name: 'memeId', type: String, required: true })
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    required: true,
+    description: 'Meme slug or ID',
+  })
   async update(
-    @Param() params: MemeParamsDto,
+    @Param('slugOrId') slugOrId: string,
     @Body() updateDto: UpdateMemeDto,
     @CurrentUser() user: User,
   ) {
-    const meme = await this.memesService.update(params.memeId, updateDto, user);
+    const meme = await this.memesService.update(slugOrId, updateDto, user);
     return {
       success: true,
       message: 'Meme updated successfully',
@@ -143,11 +152,16 @@ export class MemesController {
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  @Delete(':id')
-  @ApiParam({ name: 'memeId', type: String, required: true })
+  @Delete(':slugOrId')
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    required: true,
+    description: 'Meme slug or ID',
+  })
   @HttpCode(HttpStatus.OK)
-  async remove(@Param() params: MemeParamsDto, @CurrentUser() user: User) {
-    await this.memesService.remove(params.memeId, user);
+  async remove(@Param('slugOrId') slugOrId: string, @CurrentUser() user: User) {
+    await this.memesService.remove(slugOrId, user);
     return {
       success: true,
       message: 'Meme deleted successfully',

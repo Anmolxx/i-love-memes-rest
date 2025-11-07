@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
+import { RelationalMemePersistenceModule } from 'src/memes/infrastructure/persistence/relational/relational-persistence.module';
 import { RelationalMemeInteractionPersistenceModule } from './infrastructure/persistence/relational/relational-persistence.module';
 import { InteractionsController } from './interactions.controller';
 import { InteractionsService } from './interactions.service';
 
 @Module({
-  imports: [RelationalMemeInteractionPersistenceModule],
+  imports: [
+    RelationalMemeInteractionPersistenceModule,
+    RelationalMemePersistenceModule,
+  ],
   controllers: [InteractionsController],
   providers: [InteractionsService],
   exports: [InteractionsService, RelationalMemeInteractionPersistenceModule],

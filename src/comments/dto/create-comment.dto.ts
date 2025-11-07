@@ -16,8 +16,11 @@ export class CreateCommentDto {
   @MaxLength(2000)
   content: string;
 
-  @ApiProperty({ example: 'cbcfa8b8-3a25-4adb-a9c6-e325f0d0f3ae' })
-  @IsUUID()
+  @ApiProperty({
+    example: 'funny-cat-meme',
+    description: 'Meme slug or UUID',
+  })
+  @IsString()
   @IsNotEmpty()
   memeId: string;
 

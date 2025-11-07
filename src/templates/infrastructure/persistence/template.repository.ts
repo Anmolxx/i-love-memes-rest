@@ -18,6 +18,7 @@ export abstract class TemplateRepository {
 
   abstract getByTitle(title: string): Promise<TemplateEntity | null>;
   abstract getById(id: string): Promise<TemplateEntity | null>;
+  abstract findBySlug(slug: string): Promise<TemplateEntity | null>;
   abstract findManyWithPagination(
     options: IPaginationOptions &
       ISortOptions<TemplateEntity> &

@@ -4,14 +4,16 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
 } from 'class-validator';
 import { InteractionType, ReportReason } from '../interactions.enum';
 
 export class CreateInteractionDto {
-  @ApiProperty({ example: 'cbcfa8b8-3a25-4adb-a9c6-e325f0d0f3ae' })
-  @IsUUID()
+  @ApiProperty({
+    example: 'funny-cat-meme',
+    description: 'Meme slug or UUID',
+  })
+  @IsString()
   @IsNotEmpty()
   memeId: string;
 

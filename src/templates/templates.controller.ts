@@ -27,7 +27,6 @@ import { Template } from './domain/template';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { GetTemplatesQueryDto } from './dto/get-all-template-query.dto';
 import { CreateTemplateResponseDto } from './dto/response/create-template.response.dto';
-import { TemplateUuidDto } from './dto/template-uuid.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { TemplateService } from './templates.service';
 
@@ -76,26 +75,26 @@ export class TemplateController {
     return createResponse('Templates fetched successfully', items, meta);
   }
 
-  @Get(':templateId')
+  @Get(':slugOrId')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: Template })
-  async getById(@Param() params: TemplateUuidDto) {
-    const result = await this.templateService.getById(params.templateId);
+  async getById(@Param('slugOrId') slugOrId: string) {
+    const result = await this.templateService.findOne(slugOrId);
     return createResponse('Template Fetched Successfully', result);
   }
 
-  @Patch(':templateId')
+  @Patch(':slugOrId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @ApiOkResponse({ type: Template })
   @HttpCode(HttpStatus.OK)
   async update(
     @Body() updateTemplateDto: UpdateTemplateDto,
-    @Param() param: TemplateUuidDto,
+    @Param('slugOrId') slugOrId: string,
     @CurrentUser() user: JwtPayloadType,
   ) {
     const result = await this.templateService.update(
-      param.templateId,
+      slugOrId,
       updateTemplateDto,
       user,
     );
@@ -103,11 +102,11 @@ export class TemplateController {
     return createResponse('Template Updated Successfully', result);
   }
 
-  @Delete(':templateId')
+  @Delete(':slugOrId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param() param: TemplateUuidDto) {
-    await this.templateService.delete(param.templateId);
+  async delete(@Param('slugOrId') slugOrId: string) {
+    await this.templateService.delete(slugOrId);
   }
 }

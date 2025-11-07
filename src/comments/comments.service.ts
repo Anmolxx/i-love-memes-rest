@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Comment } from 'src/comments/domain/comment';
+import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { CommentStatus } from './comments.enum';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -17,10 +18,24 @@ const EDIT_WINDOW_HOURS = 24;
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly commentRepository: CommentRepository) {}
+  constructor(
+    private readonly commentRepository: CommentRepository,
+    private readonly memeRepository: MemesRepository,
+  ) {}
 
   async create(createCommentDto: CreateCommentDto, userId: string) {
-    const { content, memeId, parentCommentId } = createCommentDto;
+    const { content, memeId: memeSlugOrId, parentCommentId } = createCommentDto;
+
+    // Resolve meme slug to ID
+    let meme = await this.memeRepository.findBySlug(memeSlugOrId);
+    if (!meme) {
+      meme = await this.memeRepository.findById(memeSlugOrId);
+    }
+    if (!meme) {
+      throw new NotFoundException(
+        `Meme with identifier ${memeSlugOrId} not found`,
+      );
+    }
 
     let depth = 0;
     let parentComment: NullableType<Comment> = null;
@@ -47,7 +62,7 @@ export class CommentsService {
 
     const comment = await this.commentRepository.create({
       content,
-      meme: { id: memeId } as any,
+      meme: { id: meme.id } as any,
       author: { id: userId } as any,
       parentComment: parentCommentId
         ? ({ id: parentCommentId } as Partial<Comment>)
@@ -65,9 +80,20 @@ export class CommentsService {
     return comment;
   }
 
-  async findByMeme(memeId: string, query: QueryCommentDto) {
+  async findByMeme(memeSlugOrId: string, query: QueryCommentDto) {
+    // Resolve meme slug to ID
+    let meme = await this.memeRepository.findBySlug(memeSlugOrId);
+    if (!meme) {
+      meme = await this.memeRepository.findById(memeSlugOrId);
+    }
+    if (!meme) {
+      throw new NotFoundException(
+        `Meme with identifier ${memeSlugOrId} not found`,
+      );
+    }
+
     return this.commentRepository.findByMeme({
-      memeId,
+      memeId: meme.id,
       paginationOptions: {
         page: query.page || 1,
         limit: query.limit || 10,

@@ -49,7 +49,7 @@ export class CommentRelationalRepository implements CommentRepository {
       .leftJoinAndSelect('comment.author', 'author')
       .leftJoinAndSelect('comment.meme', 'meme')
       .where('comment.meme_id = :memeId', { memeId })
-      .andWhere('comment.parentCommentId IS NULL')
+      .andWhere('comment.parent_comment_id IS NULL')
       .andWhere('comment.deletedAt IS NULL');
 
     // Apply sorting

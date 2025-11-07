@@ -49,6 +49,12 @@ export class TemplateRelationalRepository implements TemplateRepository {
     });
   }
 
+  async findBySlug(slug: string): Promise<TemplateEntity | null> {
+    return this.templateRepository.findOne({
+      where: { slug },
+    });
+  }
+
   async findManyWithPagination(
     options: IPaginationOptions &
       ISortOptions<TemplateEntity> &

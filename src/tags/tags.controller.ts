@@ -66,56 +66,48 @@ export class TagsController {
     return this.tagsService.search(query);
   }
 
-  @Get(':id')
+  @Get(':slugOrId')
   @ApiParam({
-    name: 'id',
+    name: 'slugOrId',
     type: String,
     required: true,
+    description: 'Tag slug or ID',
   })
   @ApiOkResponse({ type: Tag })
-  findOne(@Param('id') id: string): Promise<Tag> {
-    return this.tagsService.findOne(id);
-  }
-
-  @Get('slug/:slug')
-  @ApiParam({
-    name: 'slug',
-    type: String,
-    required: true,
-  })
-  @ApiOkResponse({ type: Tag })
-  findBySlug(@Param('slug') slug: string): Promise<Tag> {
-    return this.tagsService.findBySlug(slug);
+  findOne(@Param('slugOrId') slugOrId: string): Promise<Tag> {
+    return this.tagsService.findOne(slugOrId);
   }
 
   @ApiBearerAuth()
   @Roles(RoleEnum.admin)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Patch(':id')
+  @Patch(':slugOrId')
   @ApiParam({
-    name: 'id',
+    name: 'slugOrId',
     type: String,
     required: true,
+    description: 'Tag slug or ID',
   })
   @ApiOkResponse({ type: Tag })
   update(
-    @Param('id') id: string,
+    @Param('slugOrId') slugOrId: string,
     @Body() updateTagDto: UpdateTagDto,
   ): Promise<Tag> {
-    return this.tagsService.update(id, updateTagDto);
+    return this.tagsService.update(slugOrId, updateTagDto);
   }
 
   @ApiBearerAuth()
   @Roles(RoleEnum.admin)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Delete(':id')
+  @Delete(':slugOrId')
   @ApiParam({
-    name: 'id',
+    name: 'slugOrId',
     type: String,
     required: true,
+    description: 'Tag slug or ID',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string): Promise<void> {
-    return this.tagsService.remove(id);
+  remove(@Param('slugOrId') slugOrId: string): Promise<void> {
+    return this.tagsService.remove(slugOrId);
   }
 }
