@@ -2,7 +2,8 @@
 
 ## Overview
 
-All entities with slug fields (Tags, Memes, Templates) now support querying by both slug and UUID. This provides a more user-friendly API where clients can use human-readable slugs instead of UUIDs for retrieving and referencing resources.
+All entities with slug fields (Tags, Memes, Templates) now support querying by both slug and UUID. This provides a more
+user-friendly API where clients can use human-readable slugs instead of UUIDs for retrieving and referencing resources.
 
 ## Implementation Pattern
 
@@ -22,20 +23,28 @@ Services use a consistent pattern for resolving slugOrId to the actual entity:
 3. **Error handling**: If still not found, throw `NotFoundException` with descriptive message
 
 ```typescript
-async findOne(slugOrId: string): Promise<Entity> {
+async
+findOne(slugOrId
+:
+string
+):
+Promise < Entity > {
   // Try slug first (more user-friendly)
   let entity = await this.repository.findBySlug(slugOrId);
 
   // Fall back to ID if not found
-  if (!entity) {
-    entity = await this.repository.findById(slugOrId);
-  }
+  if(!
+entity
+)
+{
+  entity = await this.repository.findById(slugOrId);
+}
 
-  if (!entity) {
-    throw new NotFoundException(`Entity with identifier ${slugOrId} not found`);
-  }
+if (!entity) {
+  throw new NotFoundException(`Entity with identifier ${slugOrId} not found`);
+}
 
-  return entity;
+return entity;
 }
 ```
 
@@ -110,12 +119,20 @@ export class CreateInteractionDto {
 
 ## Service-Level Slug Resolution
 
-When creating relationships (comments on memes, interactions on memes), the services automatically resolve slugs to IDs before persisting:
+When creating relationships (comments on memes, interactions on memes), the services automatically resolve slugs to IDs
+before persisting:
 
 ### Comments Service
 
 ```typescript
-async create(createCommentDto: CreateCommentDto, userId: string) {
+async
+create(createCommentDto
+:
+CreateCommentDto, userId
+:
+string
+)
+{
   const { memeId: memeSlugOrId } = createCommentDto;
 
   // Resolve meme slug to ID
@@ -139,7 +156,14 @@ async create(createCommentDto: CreateCommentDto, userId: string) {
 ### Interactions Service
 
 ```typescript
-async createInteraction(createInteractionDto: CreateInteractionDto, userId: string) {
+async
+createInteraction(createInteractionDto
+:
+CreateInteractionDto, userId
+:
+string
+)
+{
   const { memeId: memeSlugOrId } = createInteractionDto;
 
   // Resolve meme slug to ID
@@ -168,7 +192,9 @@ All repositories for entities with slugs now implement the `findBySlug` method:
 ```typescript
 abstract class TagsRepository {
   abstract findBySlug(slug: string): Promise<Tag | null>;
+
   abstract findById(id: string): Promise<Tag | null>;
+
   // ... other methods
 }
 ```
@@ -178,7 +204,9 @@ abstract class TagsRepository {
 ```typescript
 abstract class MemesRepository {
   abstract findBySlug(slug: string): Promise<Meme | null>;
+
   abstract findById(id: string): Promise<Meme | null>;
+
   // ... other methods
 }
 ```
@@ -188,7 +216,9 @@ abstract class MemesRepository {
 ```typescript
 abstract class TemplateRepository {
   abstract findBySlug(slug: string): Promise<TemplateEntity | null>;
+
   abstract getById(id: string): Promise<TemplateEntity | null>;
+
   // ... other methods
 }
 ```
@@ -221,14 +251,21 @@ const slug = slugify(title, {
 Tags have additional normalization for consistency:
 
 ```typescript
-private normalizeTagName(name: string): string {
+private
+normalizeTagName(name
+:
+string
+):
+string
+{
   return name.toLowerCase().trim();
 }
 ```
 
 ## Migration Impact
 
-No database migrations needed - all slug columns already exist in the schema. This is purely an API enhancement that adds flexibility to how entities are queried.
+No database migrations needed - all slug columns already exist in the schema. This is purely an API enhancement that
+adds flexibility to how entities are queried.
 
 ## Testing
 

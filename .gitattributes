@@ -1,0 +1,38 @@
+# Enforce LF line endings for text files in this repository
+# This ensures consistent LF endings across platforms (Windows, macOS, Linux).
+# See: https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings
+
+# Default: treat all files detected as text and normalize to LF
+* text=auto eol=lf
+
+# Explicit overrides for common text file types
+*.md text eol=lf
+*.markdown text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.xml text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.env text eol=lf
+*.txt text eol=lf
+
+# Treat common image and binary formats as binary
+files/* binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+*.pdf binary
+
+# End of .gitattributes
