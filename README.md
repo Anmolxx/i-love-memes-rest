@@ -1,77 +1,364 @@
-# NestJS REST API boilerplate 🇺🇦
+# ILoveMemes — NestJS REST API Backend
 
-[![image](https://github.com/brocoders/nestjs-boilerplate/assets/72293912/197da43e-02f4-4895-8d3e-b7a42a591c26)](https://github.com/new?template_name=nestjs-boilerplate&template_owner=brocoders)
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-![github action status](https://github.com/brocoders/nestjs-boilerplate/actions/workflows/docker-e2e.yml/badge.svg)
-[![renovate](https://img.shields.io/badge/renovate-enabled-%231A1F6C?logo=renovatebot)](https://app.renovatebot.com/dashboard)
-[![Static Badge](https://img.shields.io/badge/supported_by-brocoders-d91965?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTMwIiBoZWlnaHQ9IjE4NyIgdmlld0JveD0iMCAwIDEzMCAxODciIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI%2BCjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMF83NzExXzQ4OTEpIj4KPHBhdGggZD0iTTc1Ljk5NjcgNDUuNzUwNkM2NS4xMDg5IDQ2Ljg2MSA1Ny45MjMgNTguNDA5NyA2Mi4yNzgxIDY4Ljg0OEwxMDguNDQyIDE4N0w3My42MDEzIDE1NS4wMTlIMzQuODQwOUMyMC42ODY4IDE1NS4wMTkgOS4zNjM0OSAxNDMuNDcgOS4zNjM0OSAxMjkuMDM0Vjk0LjYxMDVDOS4zNjM0OSA5Mi4xNjc1IDguNDkyNDYgODkuNzI0NSA2Ljc1MDQyIDg3Ljk0NzdMMCA4MS4wNjNMNi43NTA0MiA3NC4xNzgxQzguNDkyNDYgNzIuNDAxNCA5LjM2MzQ5IDY5Ljk1ODQgOS4zNjM0OSA2Ny41MTU0VjMxLjA5MjZDOS4zNjM0OSAxMy43Njk2IDIzLjA4MjEgMCAzOS44NDkyIDBINTguMTQwN0w3NS45OTY3IDQ1Ljc1MDZaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTI1LjY0NiAxMTIuMzc4Vjk0LjgzMjdDMTI1LjY0NiA5My43MjIyIDEyNi4wODEgOTIuNjExOCAxMjYuOTUyIDkxLjcyMzRMMTMwLjAwMSA4OC4zOTIxTDEyNi45NTIgODUuMDYwN0MxMjYuMDgxIDg0LjE3MjQgMTI1LjY0NiA4My4wNjE5IDEyNS42NDYgODEuOTUxNFY2OS43MzY1QzEyNS42NDYgNTYuNDExMSAxMTQuOTc2IDQ1Ljc1MDcgMTAyLjEyOCA0NS43NTA3SDc1Ljk5NzNMMTA1LjYxMiAxMzAuODExQzEwNS42MTIgMTMwLjgxMSAxMTAuNjIgMTMwLjgxMSAxMTAuODM4IDEzMC44MTFDMTE5LjExMyAxMjkuMDM1IDEyNS42NDYgMTIxLjQ4NCAxMjUuNjQ2IDExMi4zNzhaIiBmaWxsPSJ3aGl0ZSIvPgo8L2c%2BCjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImNsaXAwXzc3MTFfNDg5MSI%2BCjxyZWN0IHdpZHRoPSIxMzAiIGhlaWdodD0iMTg3IiBmaWxsPSJ3aGl0ZSIvPgo8L2NsaXBQYXRoPgo8L2RlZnM%2BCjwvc3ZnPgo%3D&logoColor=d91965)](https://brocoders.com/)
-[![Discord Badge](https://img.shields.io/badge/discord-NodeJS_boilerplate-d91965?style=flat&labelColor=5866f2&logo=discord&logoColor=white&link=https://discord.com/channels/520622812742811698/1197293125434093701)](https://discord.com/channels/520622812742811698/1197293125434093701)
+A comprehensive REST API backend for ILoveMemes — a meme generation and e-commerce platform that enables users to create, customize, share, and purchase custom meme products.
 
-<br />
-<p align="center"><a href="https://discord.com/channels/520622812742811698/1197293125434093701"><img src="https://github.com/brocoders/nestjs-boilerplate/assets/72293912/c9d5fbf0-b56d-46b5-bb30-f96f44764bae" width="300"/></a></p>
-<br />
+---
 
-## Description <!-- omit in toc -->
+## Table of Contents
 
-NestJS REST API boilerplate for a typical project
+### Getting Started
 
-[Full documentation here](/docs/readme.md)
+- [Introduction](docs/introduction.md)
+- [Installing and Running](docs/installing-and-running.md)
+- [Architecture Overview](docs/architecture.md)
+- [System Design](docs/system-design.md)
 
-Demo: <https://nestjs-boilerplate-test.herokuapp.com/docs>
+### Development
 
-A fully compatible frontend boilerplate: <https://github.com/brocoders/extensive-react-boilerplate>
+- [Command Line Interface](docs/cli.md)
+- [Database Schema & Migrations](docs/database.md)
+- [Authentication & Authorization](docs/auth.md)
+- [Serialization](docs/serialization.md)
+- [File Uploading & Management](docs/file-uploading.md)
+- [Testing Strategy](docs/tests.md)
+- [Benchmarking](docs/benchmarking.md)
+- [Translations & i18n](docs/translations.md)
+- [Automatic Dependency Updates](docs/automatic-update-dependencies.md)
 
-Belongs to the [bc boilerplates](https://bcboilerplates.com/) ecosystem
+### Modules & Features
 
-<https://github.com/user-attachments/assets/a66f114a-c714-4036-8eeb-20cbf04ae985>
+- [Module Overview](docs/modules/README.md)
+- [Authentication Module](docs/modules/auth/module-overview.md)
+- [Memes Module](docs/modules/memes/module-overview.md)
+- [Templates Module](docs/modules/templates/module-overview.md)
+- [Users Module](docs/modules/users/module-overview.md)
+- [Files Module](docs/modules/files/module-overview.md)
+- [Tags Module](docs/modules/tags/module-overview.md)
 
-## Table of Contents <!-- omit in toc -->
+### Features
 
-- [Features](#features)
-- [Contributors](#contributors)
-- [Support](#support)
+- [Meme Generation](docs/features/meme-generation/feature-specification.md)
+- [Template Management](docs/features/template-management/feature-specification.md)
+- [Community Gallery](docs/features/community-gallery/feature-specification.md)
+- [E-commerce Integration](docs/features/ecommerce-integration/feature-specification.md)
 
-## Features
+### API Documentation
 
-- [x] Database. Support [TypeORM](https://www.npmjs.com/package/typeorm)
-  and [Mongoose](https://www.npmjs.com/package/mongoose).
-- [x] Seeding.
-- [x] Config Service ([@nestjs/config](https://www.npmjs.com/package/@nestjs/config)).
-- [x] Mailing ([nodemailer](https://www.npmjs.com/package/nodemailer)).
-- [x] Sign in and sign up via email.
-- [x] Social sign in (Apple, Facebook, Google).
-- [x] Admin and User roles.
-- [x] Internationalization/Translations (I18N) ([nestjs-i18n](https://www.npmjs.com/package/nestjs-i18n)).
-- [x] File uploads. Support local and Amazon S3 drivers.
-- [x] Swagger.
-- [x] E2E and units tests.
-- [x] Docker.
-- [x] CI (Github Actions).
+- [API Reference](docs/api-reference.md)
+- [Endpoints Overview](docs/api-endpoints.md)
 
-## Contributors
+---
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Shchepotin"><img src="https://avatars.githubusercontent.com/u/6001723?v=4?s=100" width="100px;" alt="Vladyslav Shchepotin"/><br /><sub><b>Vladyslav Shchepotin</b></sub></a><br /><a href="#maintenance-Shchepotin" title="Maintenance">🚧</a> <a href="#doc-Shchepotin" title="Documentation">📖</a> <a href="#code-Shchepotin" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/SergeiLomako"><img src="https://avatars.githubusercontent.com/u/31205374?v=4?s=100" width="100px;" alt="SergeiLomako"/><br /><sub><b>SergeiLomako</b></sub></a><br /><a href="#code-SergeiLomako" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ElenVlass"><img src="https://avatars.githubusercontent.com/u/72293912?v=4?s=100" width="100px;" alt="Elena Vlasenko"/><br /><sub><b>Elena Vlasenko</b></sub></a><br /><a href="#doc-ElenVlass" title="Documentation">📖</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://brocoders.com"><img src="https://avatars.githubusercontent.com/u/226194?v=4?s=100" width="100px;" alt="Rodion"/><br /><sub><b>Rodion</b></sub></a><br /><a href="#business-sars" title="Business development">💼</a></td>
-    </tr>
-  </tbody>
-</table>
+## Project Overview
 
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
+### What is ILoveMemes?
 
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+ILoveMemes is a comprehensive meme generation and e-commerce platform that combines creative tools with print-on-demand capabilities. The platform enables users to:
 
-## Support
+- **Create**: Use a Fabric.js-based canvas editor to create custom memes from templates
+- **Customize**: Add text, stickers, images with full control over styling and positioning
+- **Share**: Publish creations to a community gallery with social interactions
+- **Commerce**: Transform memes into physical products (candy tubes, candles, greeting cards, etc.)
+- **Purchase**: Complete checkout flow with Shopify and Stripe integration
 
-If you seek consulting, support, or wish to collaborate, please contact us
-via [boilerplates@brocoders.com](mailto:boilerplates@brocoders.com). For any inquiries regarding boilerplates, feel free
-to ask on [GitHub Discussions](https://github.com/brocoders/nestjs-boilerplate/discussions)
-or [Discord](https://discord.com/channels/520622812742811698/1197293125434093701).
+### Backend Architecture
+
+This repository contains the NestJS-based REST API backend that powers the platform. The backend follows clean architecture principles with:
+
+- **Domain-Driven Design**: Core business logic isolated in domain models
+- **Repository Pattern**: Abstract data persistence layer for flexibility
+- **Modular Structure**: Feature-based modules with clear boundaries
+- **Type Safety**: Full TypeScript implementation with strict typing
+- **API Versioning**: Support for multiple API versions
+
+### Technology Stack
+
+| Layer              | Technology      | Purpose                              |
+| ------------------ | --------------- | ------------------------------------ |
+| **Framework**      | NestJS          | Enterprise-grade Node.js framework   |
+| **Language**       | TypeScript      | Type-safe application development    |
+| **Database**       | PostgreSQL      | Relational data persistence          |
+| **ORM**            | TypeORM         | Database abstraction and migrations  |
+| **Authentication** | JWT + Passport  | Secure user authentication           |
+| **File Storage**   | S3 / Local      | Asset management (images, templates) |
+| **Email**          | Nodemailer      | Transactional email service          |
+| **API Docs**       | Swagger/OpenAPI | Interactive API documentation        |
+| **Testing**        | Jest            | Unit and E2E testing                 |
+| **Validation**     | class-validator | DTO validation                       |
+
+---
+
+## Core Concepts
+
+### User Roles & Permissions
+
+#### Admin Users
+
+- Create and manage meme templates
+- Manage products and product categories
+- View analytics and metrics
+- Moderate community content
+- Access admin dashboard
+
+#### Regular Users
+
+- Browse and search meme templates
+- Create memes using templates
+- Upload custom images and stickers
+- Share memes to community gallery
+- Interact with community (upvote, comment, share)
+- Purchase custom products
+- Manage personal profile and creations
+
+### Meme Template System
+
+#### Meme Template
+
+- Canvas-based layout created by admins
+- Defines dimensions, background, and layer structure
+- Contains metadata (title, description, tags, category)
+- Versioned for template evolution
+- Supports preview thumbnails
+
+#### Layer Types
+
+1. **Text Layer**
+   - Editable text content
+   - Customizable properties:
+     - Font family, size, weight
+     - Color, stroke, shadow
+     - Background color/opacity
+     - Text alignment (left, center, right)
+     - Line height and letter spacing
+   - Transform controls (position, rotation, scale)
+   - Z-index for layering
+
+2. **Image Layer**
+   - Placeholder for user images
+   - Sticker library support
+   - Transform controls (position, rotation, scale)
+   - Opacity control
+   - Crop and fit options
+   - Z-index for layering
+
+#### Layer Transforms
+
+- Position: X/Y coordinates on canvas
+- Rotation: Degrees (-180° to 180°)
+- Scale: Width/Height percentage
+- Lock aspect ratio option
+- Snap-to-grid functionality
+
+### Meme Instance Lifecycle
+
+1. **Creation**: User selects template and fills layers
+2. **Editing**: Real-time manipulation on canvas (frontend)
+3. **Export**: Backend renders final image (PNG/JPEG)
+4. **Storage**: Image saved to file storage (S3/Local)
+5. **Publishing**: Optional publication to community gallery
+6. **Product Mapping**: Optional product association for e-commerce
+
+### Product System
+
+#### Product Types
+
+- Candy Tubes
+- Candles
+- Greeting Cards
+- Stickers
+- Posters
+- Custom printables
+
+#### Product Workflow
+
+1. Admin creates product with mockup template
+2. User applies meme to product preview
+3. Backend generates product visualization
+4. User adds to cart and proceeds to checkout
+5. Order sent to fulfillment
+6. Label generator creates print-ready files (300 DPI)
+
+### Content Moderation
+
+#### Automated Filters
+
+- Text profanity detection
+- Image content analysis (NSFW detection)
+- Spam prevention
+- Rate limiting
+
+#### Manual Moderation
+
+- User reporting system
+- Admin review queue
+- Content flagging
+- User warnings/bans
+
+### Analytics & Metrics
+
+#### Template Metrics
+
+- Usage count per template
+- Popular templates trending
+- Time-windowed analysis (7/30/90 days)
+
+#### Meme Metrics
+
+- Views, upvotes, downvotes
+- Comments and shares
+- Trending score calculation
+- Engagement rate
+
+#### User Metrics
+
+- Memes created per user
+- Popular creators
+- Engagement statistics
+
+---
+
+## Features & Capabilities
+
+This backend provides comprehensive REST APIs for:
+
+- Product and order management with integrations to Shopify and Stripe
+- Print-ready label generation for in-house production
+- Basic moderation (text/image filters) and analytics per template/meme
+
+The backend follows a modular NestJS structure (controllers, services, modules, repositories) and exposes REST endpoints consumed by:
+
+- Meme editor frontend (Fabric.js-based canvas)
+- Admin dashboard (template/product/order management)
+- Community frontend (feed, search, product preview)
+
+## Core concepts
+
+- Admin: can create/manage meme templates, products, and view metrics.
+- Meme template: canvas layout created via the dedicated meme frontend; defines a set of Layers.
+- Layer: building block of a template; two types:
+  - Text Layer: editable text with font, color, stroke, shadow, background, alignment
+  - Image Layer: placeholder or sticker image
+- Layer transforms: move, rotate, scale. Frontend uses Fabric.js to manage canvas/layers.
+- Meme instance: a user-generated image produced by filling Text/Image layers and exporting.
+- Product: mapping of a meme to a printable product (mockups such as candy tubes, candles, greeting cards).
+- Moderation: basic profanity/text and image filters applied at creation/upload time.
+- Analytics: counts and time-windowed metrics (e.g., memes created per-template in a given period).
+
+## Features (backend responsibilities)
+
+- Template CRUD and versioning
+- Uploading and serving assets (templates, images, stickers)
+- Meme creation endpoint (accepts layer content and exports image)
+- Community endpoints: list, search, filter, tags, trending algorithms
+- Interaction endpoints: upvote, downvote, report, flag, comment (auth required)
+- Product preview endpoints: render meme onto product mockups or return mockup URLs
+- Checkout integrations: create cart/order, Shopify/Stripe webhooks, order status
+- Label generation: export print-ready (300 DPI) label files
+- Basic moderation pipelines for text/image content
+- Metrics APIs for admins (per-template and per-meme stats)
+
+## Example API routes (browse-focused)
+
+- GET /meme-templates
+  - List available meme templates (pagination, search, filters)
+
+- GET /memes
+  - Browse user-generated memes (default: latest first, pagination)
+- GET /memes?sort=oldest
+  - Browse oldest-first
+- GET /memes/{template-slug}
+  - List memes created from a specific template
+- GET /memes/trending
+  - Memes considered "trending" by backend scoring logic (time-window + popularity)
+- GET /memes/most-upvoted
+  - Memes sorted desc by upvotes
+- GET /memes/least-downvoted
+  - Memes sorted asc by downvotes
+- GET /memes/tag/{tag}
+  - Memes filtered by tag (e.g., /memes/tag/happy, /memes/tag/nsfw)
+
+Interaction and content routes:
+
+- POST /memes/{id}/interactions
+  - Body: { type: "upvote"|"downvote"|"report"|"flag", note?: string }
+  - Some interaction types require a note (e.g., report), others do not.
+  - Authenticated users only.
+- POST /memes/{id}/comments
+  - Add a comment (auth required)
+- POST /meme-templates (admin)
+  - Create a template (metadata + asset references)
+- POST /memes
+  - Create a meme instance (payload: filled layers). Backend returns exported image URL and variant for product preview.
+
+Product and checkout:
+
+- POST /products (admin)
+- GET /products/{id}/preview?memeId={m}
+  - Returns product mockup with meme applied
+- POST /checkout (Shopify/Stripe integration)
+
+## Authentication & interactions
+
+- All mutation endpoints (create, interact, comment, order) require authentication.
+- Interactions (upvote/downvote/comment/report/flag) are recorded per-user to prevent abuse.
+- Admin endpoints are role-protected.
+- Moderation hooks run on meme creation/upload to detect profanity and nudity where applicable.
+
+## Data & Metrics
+
+- Key metrics: memes created per-template, upvotes/downvotes per meme, trending score.
+- Admin endpoints allow time-windowed queries (e.g., number of memes created in last 7/30 days).
+- Usage of background workers (or queue) is recommended for expensive tasks: image rendering, label generation, Shopify webhooks.
+
+## Quick Start (local development)
+
+Prerequisites:
+
+- Node.js (>=16)
+- npm or yarn
+- PostgreSQL (or configured DB per .env)
+
+Steps:
+
+1. Clone the repo and install dependencies:
+    - npm install
+2. Copy .env.example to .env and configure DB/keys:
+    - cp .env.example .env
+3. Run database migrations/seeding if applicable.
+4. Start in development:
+    - npm run start:dev
+5. API will be available at <http://localhost:3000> by default.
+
+## Milestones & Deliverables
+
+- Milestone 1: Meme Editor
+  Deliverable: Meme generator (like imgflip) — upload/choose template, add text/stickers, export/share.
+
+- Milestone 2: Admin Dashboard
+  Deliverable: Admin panel to manage templates, products, and orders.
+
+- Milestone 3: Community Gallery
+  Deliverable: Community feed where users can share, browse, and buy memes made by others.
+
+- Milestone 4: Product Preview
+  Deliverable: Memes placed onto product mockups (candy tubes, candles, greeting cards).
+
+- Milestone 5: Checkout + Order Flow
+  Deliverable: Integrated checkout (Shopify/Stripe) to purchase customized products.
+
+- Milestone 6: Label Generator
+  Deliverable: Print-ready label files (300 DPI) for in-house production.
+
+- Milestone 7: Basic Moderation
+  Deliverable: Simple text/image filters (profanity/nudity).
+
+## Where to look next
+
+- docs/introduction.md — high-level project notes
+- docs/installing-and-running.md — detailed install/run instructions
+- docs/architecture.md — architecture overview
+- src/ — NestJS application code (controllers, modules, services)
