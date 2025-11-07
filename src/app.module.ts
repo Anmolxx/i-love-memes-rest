@@ -24,6 +24,7 @@ import { MailModule } from './mail/mail.module';
 import { MailerModule } from './mailer/mailer.module';
 import { MemesModule } from './memes/memes.module';
 import { SessionModule } from './session/session.module';
+import { TagsModule } from './tags/tags.module';
 import { TemplateModule } from './templates/templates.module';
 import { UsersModule } from './users/users.module';
 
@@ -86,6 +87,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     HomeModule,
     MemesModule,
     TemplateModule,
+    TagsModule,
   ],
 })
 export class AppModule {}
