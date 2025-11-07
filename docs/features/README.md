@@ -87,6 +87,79 @@ Flexible taxonomy system for organizing and discovering memes and templates.
 
 Features related to user interactions, community engagement, and social functionality.
 
+#### [User Interactions](./user-interactions/feature-specification.md)
+
+**Status**: ✅ Documented
+
+Social interaction system for upvotes, downvotes, reports, and flags with trending algorithms.
+
+**Key Capabilities**:
+
+- Upvote/downvote memes with toggle logic
+- Report inappropriate content (7 reason categories)
+- Flag for lighter moderation
+- Track interaction counts and aggregations
+- Sort/filter memes by interactions
+- Trending score calculation with time decay
+- Controversy score for polarizing content
+- Report threshold auto-moderation
+- Rate limiting with Redis
+
+**Endpoints**: `/v1/memes/:id/interactions`, `/v1/memes/:id/vote`, `/v1/memes/:id/report`
+
+**Database Tables**: `meme_interactions`, materialized views
+
+---
+
+#### [Comments](./comments/feature-specification.md)
+
+**Status**: ✅ Documented
+
+Threaded comment system enabling discussions on memes with moderation capabilities.
+
+**Key Capabilities**:
+
+- Comment creation on memes
+- Threaded/nested comments (5-level depth)
+- Comment editing with time window (24h)
+- Soft deletion preserving structure
+- User mentions (@username)
+- Comment reporting and moderation
+- Pagination and sorting (newest/oldest/popular)
+- Comment counts and reply tracking
+- Profanity filtering and spam detection
+
+**Endpoints**: `/v1/memes/:id/comments`, `/v1/comments/:id/replies`, `/v1/comments/:id/report`
+
+**Database Tables**: `comments`, `comment_reports`, `comment_edit_history`
+
+---
+
+#### [Meme Tags (Enhanced)](./meme-tags/feature-specification.md)
+
+**Status**: ✅ Documented
+
+Dynamic tagging system with automatic tag creation and many-to-many relationships.
+
+**Key Capabilities**:
+
+- Dynamic tag creation on-demand
+- Tag normalization and deduplication
+- Many-to-many relationships (tags ↔ memes, tags ↔ templates)
+- Tag autocomplete and search
+- Tag trending and popularity tracking
+- Tag merging and aliasing
+- Tag moderation and approval workflow
+- Tag hierarchies (parent-child)
+- Tag blacklisting
+- Bulk tag operations
+
+**Endpoints**: `/v1/tags/find-or-create`, `/v1/memes/:id/tags`, `/v1/templates/:id/tags`, `/v1/tags/search`
+
+**Database Tables**: `tags`, `meme_tags`, `template_tags`, `tag_blacklist`
+
+---
+
 #### Community Gallery
 
 **Status**: 🔄 Planned
@@ -97,32 +170,8 @@ Public meme gallery with social interactions, trending algorithms, and content d
 
 - Public meme feed
 - Trending meme identification
-- Upvote/downvote system
-- Comments and discussions
 - Share functionality
-- Content reporting
 - User profiles and creator pages
-
-**Planned Endpoints**: `/v1/community/*`, `/v1/interactions/*`
-
----
-
-#### User Interactions
-
-**Status**: 🔄 Planned
-
-Social interaction system for upvotes, downvotes, comments, sharing, and reporting.
-
-**Planned Capabilities**:
-
-- Upvote/downvote memes
-- Comment system
-- Share to social media
-- Report inappropriate content
-- Flag for moderation
-- Like collections
-
-**Planned Endpoints**: `/v1/memes/:id/interactions`, `/v1/memes/:id/comments`
 
 ---
 
@@ -284,7 +333,8 @@ User profile and account management system.
 ## Feature Status Legend
 
 - ✅ **Implemented**: Feature is live and production-ready
-- 🔄 **Planned**: Feature is planned for future implementation
+- � **Documented**: Feature specification complete, ready for development
+- �🔄 **Planned**: Feature is planned for future implementation
 - 🚧 **In Progress**: Feature is currently under development
 - 🔍 **In Review**: Feature is complete and under review
 - ⏸️ **On Hold**: Feature development is paused
@@ -301,27 +351,37 @@ graph TD
     AUTH[Authentication] --> USERS[User Management]
     AUTH --> MEMES[Memes]
     AUTH --> TEMPLATES[Templates]
+    AUTH --> INTERACTIONS[User Interactions]
+    AUTH --> COMMENTS[Comments]
 
     USERS --> MEMES
     USERS --> TEMPLATES
+    USERS --> INTERACTIONS
+    USERS --> COMMENTS
 
     TEMPLATES --> MEMES
 
     FILES[File Management] --> MEMES
     FILES --> TEMPLATES
 
-    TAGS[Categories & Tags] --> MEMES
+    TAGS[Meme Tags] --> MEMES
     TAGS --> TEMPLATES
 
-    MEMES --> INTERACTIONS[User Interactions]
+    MEMES --> INTERACTIONS
+    MEMES --> COMMENTS
     MEMES --> GALLERY[Community Gallery]
     MEMES --> PRODUCTS[E-commerce]
 
     TEMPLATES --> PRODUCTS
 
+    INTERACTIONS --> GALLERY
+    COMMENTS --> GALLERY
+
     MEMES --> MODERATION[Content Moderation]
     MEMES --> ANALYTICS[Analytics]
     TEMPLATES --> ANALYTICS
+    COMMENTS --> MODERATION
+    INTERACTIONS --> MODERATION
 ```
 
 ### Integration Flow
@@ -329,8 +389,9 @@ graph TD
 1. **Authentication** provides user context for all features
 2. **File Management** handles asset storage for memes and templates
 3. **Templates** define structure for **Memes**
-4. **Tags** organize both **Memes** and **Templates**
-5. **Memes** power **Community Gallery**, **E-commerce**, and **Analytics**
+4. **Meme Tags** organize both **Memes** and **Templates** with dynamic creation
+5. **Memes** power **User Interactions**, **Comments**, **Community Gallery**, **E-commerce**, and **Analytics**
+6. **User Interactions** and **Comments** feed into **Community Gallery** and **Content Moderation**
 
 ---
 
@@ -343,12 +404,14 @@ graph TD
 - ✅ File Management
 - ✅ Meme Templates
 - ✅ Memes
-- ✅ Categories & Tags
+- ✅ Categories & Tags (Basic)
 
 ### Phase 2: Community & Engagement (Q1 2026)
 
+- � User Interactions (Documented)
+- 📝 Comments System (Documented)
+- � Meme Tags - Enhanced (Documented)
 - 🔄 Community Gallery
-- 🔄 User Interactions
 - 🔄 Content Moderation (Basic)
 - 🔄 Analytics (Basic)
 
@@ -434,14 +497,17 @@ All feature specifications follow these standards:
 
 ### Common Endpoints
 
-| Feature        | Base Path       | Authentication    |
-| -------------- | --------------- | ----------------- |
-| Authentication | `/v1/auth`      | Public/Required   |
-| Users          | `/v1/users`     | Required          |
-| Memes          | `/v1/memes`     | Optional/Required |
-| Templates      | `/v1/templates` | Optional/Required |
-| Tags           | `/v1/tags`      | Optional/Required |
-| Files          | `/v1/files`     | Required          |
+| Feature           | Base Path                | Authentication    |
+| ----------------- | ------------------------ | ----------------- |
+| Authentication    | `/v1/auth`               | Public/Required   |
+| Users             | `/v1/users`              | Required          |
+| Memes             | `/v1/memes`              | Optional/Required |
+| Templates         | `/v1/templates`          | Optional/Required |
+| Tags              | `/v1/tags`               | Optional/Required |
+| Files             | `/v1/files`              | Required          |
+| User Interactions | `/v1/memes/:id/vote`     | Required          |
+| Comments          | `/v1/memes/:id/comments` | Optional/Required |
+| Meme Tags         | `/v1/memes/:id/tags`     | Optional/Required |
 
 ### Common Response Format
 
