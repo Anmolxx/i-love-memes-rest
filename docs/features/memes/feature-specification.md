@@ -68,8 +68,9 @@ Then a new meme instance is created
 
 **Business Rules**:
 
-- Title must be unique per user
-- Slug is auto-generated from title (lowercase, hyphenated)
+- Titles can be duplicate (uniqueness enforced via slug, not title)
+- Slug is auto-generated from title with guaranteed uniqueness
+- If base slug exists, a random 7-character suffix is appended
 - File must exist and be in TEMPORARY status
 - Authenticated users only
 - Audience can be PUBLIC or PRIVATE
@@ -216,7 +217,7 @@ Then the meme is visible to all users
 ### Data Integrity
 
 - **Foreign Key Constraints**: Author, File, Template references
-- **Unique Constraints**: Title per user, slug globally
+- **Unique Constraints**: Slug globally unique (enforced at database and application level)
 - **Soft Deletion**: Preserve data for audit trail
 - **Transaction Support**: ACID compliance for updates
 - **Backup Strategy**: Daily automated backups
@@ -260,10 +261,11 @@ CREATE TABLE memes (
   INDEX idx_memes_created_at (created_at DESC),
   INDEX idx_memes_slug (slug),
   INDEX idx_memes_deleted_at (deleted_at),
+  INDEX idx_memes_title (title),  -- For title searches
 
   -- Constraints
-  CONSTRAINT chk_audience CHECK (audience IN ('PUBLIC', 'PRIVATE')),
-  CONSTRAINT uk_meme_title_author UNIQUE (title, author_id)
+  CONSTRAINT chk_audience CHECK (audience IN ('PUBLIC', 'PRIVATE'))
+  -- Note: No unique constraint on title - uniqueness enforced via slug only
 );
 ```
 
@@ -505,15 +507,55 @@ Response 200 OK:
 ### Slug Generation Algorithm
 
 ```typescript
-function generateSlug(title: string): string {
-  const baseSlug = title
+function generateBaseSlug(title: string): string {
+  return title
     .toString()
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
     .replace(/(^-|-$)+/g, '');     // Remove leading/trailing hyphens
+}
 
-  return baseSlug;
+function generateRandomString(length: number = 7): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+async function generateUniqueSlug(title: string): Promise<string> {
+  const baseSlug = generateBaseSlug(title);
+
+  // Check if base slug is available
+  const existingMeme = await memesRepository.findBySlug(baseSlug);
+
+  if (!existingMeme) {
+    return baseSlug;
+  }
+
+  // Slug conflict detected, append random 7-character string
+  let uniqueSlug: string;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  do {
+    const randomSuffix = generateRandomString(7);
+    uniqueSlug = `${baseSlug}-${randomSuffix}`;
+
+    const conflictingMeme = await memesRepository.findBySlug(uniqueSlug);
+
+    if (!conflictingMeme) {
+      return uniqueSlug;
+    }
+
+    attempts++;
+  } while (attempts < maxAttempts);
+
+  // Fallback: use timestamp-based suffix if random generation fails
+  const timestamp = Date.now().toString(36);
+  return `${baseSlug}-${timestamp}`;
 }
 ```
 
@@ -522,8 +564,32 @@ function generateSlug(title: string): string {
 - Convert to lowercase
 - Replace spaces and special characters with hyphens
 - Remove leading/trailing hyphens
-- Must be unique across all memes
-- Maximum 250 characters
+- **Always unique across all memes** (enforced by database constraint and generation logic)
+- If base slug exists, append 7-character random string
+- Random string uses lowercase letters and numbers only
+- Multiple memes with same title get different random suffixes
+- Maximum 250 characters (base slug + hyphen + 7 chars)
+- Fallback to timestamp if random generation fails after 10 attempts
+
+**Examples**:
+
+```typescript
+// First meme with title "I Love Memes"
+await generateUniqueSlug("I Love Memes");
+// Returns: "i-love-memes"
+
+// Second meme with title "I Love Memes"
+await generateUniqueSlug("I Love Memes");
+// Returns: "i-love-memes-a3b7k2m"
+
+// Third meme with title "I Love Memes"
+await generateUniqueSlug("I Love Memes");
+// Returns: "i-love-memes-x9w4t1p"
+
+// Meme with title "Hello!!! World???"
+await generateUniqueSlug("Hello!!! World???");
+// Returns: "hello-world"
+```
 
 ### File Status Management
 
@@ -548,32 +614,24 @@ When a meme is created or updated:
 
 ### Title Uniqueness Validation
 
+**Note**: With unique slug generation, titles no longer need to be unique. Multiple memes can have the same title, but each will have a unique slug.
+
 ```typescript
-// On Create
-async validateTitleUniqueness(title: string, userId: string): Promise<void> {
+// Title validation is now optional - slugs handle uniqueness
+// This validation can be kept for UX purposes to warn users about similar titles
+
+// On Create (Optional warning, not an error)
+async checkTitleSimilarity(title: string, userId: string): Promise<boolean> {
   const existingMeme = await memesRepository.findOne({
     where: { title, authorId: userId, deletedAt: IsNull() }
   });
 
-  if (existingMeme) {
-    throw new ConflictException('Meme with this title already exists');
-  }
+  // Return true if similar title exists (can show warning in UI)
+  return !!existingMeme;
 }
 
-// On Update
-async validateTitleUniquenessForUpdate(
-  title: string,
-  userId: string,
-  memeId: string
-): Promise<void> {
-  const existingMeme = await memesRepository.findOne({
-    where: { title, authorId: userId, deletedAt: IsNull() }
-  });
-
-  if (existingMeme && existingMeme.id !== memeId) {
-    throw new ConflictException('Meme with this title already exists');
-  }
-}
+// Slug uniqueness is guaranteed by the generateUniqueSlug function
+// No validation needed as it's handled during generation
 ```
 
 ### Authorization Rules
@@ -603,10 +661,12 @@ function canViewMeme(user: User | null, meme: Meme): boolean {
 | Unauthenticated create/update/delete | 401         | UNAUTHORIZED     | User not authenticated                  |
 | Unauthorized update/delete           | 403         | FORBIDDEN        | You are not allowed to modify this meme |
 | Meme not found                       | 404         | NOT_FOUND        | Meme not found                          |
-| Duplicate title                      | 422         | DUPLICATE_TITLE  | Meme with this title already exists     |
 | Invalid file ID                      | 422         | INVALID_FILE     | Incorrect File ID                       |
 | File already used                    | 422         | FILE_IN_USE      | File already linked with another meme   |
+| Slug generation failure              | 500         | SLUG_ERROR       | Failed to generate unique slug          |
 | Validation errors                    | 400         | VALIDATION_ERROR | Validation failed: [details]            |
+
+**Note**: Duplicate title is no longer an error since slugs ensure uniqueness.
 
 ### Error Response Format
 

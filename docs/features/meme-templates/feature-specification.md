@@ -70,10 +70,11 @@ Then a new template is created
 **Business Rules**:
 
 - Only admins can create templates
-- Title must be unique
+- Titles can be duplicate (uniqueness enforced via slug, not title)
+- Slug is auto-generated from title with guaranteed uniqueness
+- If base slug exists, a random 7-character suffix is appended
 - Must have at least one layer
 - Canvas dimensions must be positive integers
-- Slug is auto-generated from title
 - Default status is DRAFT until published
 
 **Data Requirements**:
@@ -223,7 +224,7 @@ Then template data is updated
 - Only admins can update templates
 - Breaking changes create new template version
 - Non-breaking changes update current version
-- Title uniqueness validated (excluding current template)
+- If title changes, a new unique slug is regenerated
 - Published templates can be updated but require review
 
 **Version Control Strategy**:
@@ -259,7 +260,7 @@ Then template status changes to PUBLISHED
 
 **Status Flow**:
 
-```
+```text
 DRAFT → PUBLISHED → ARCHIVED
   ↓         ↓
 UNPUBLISHED ← ┘
@@ -344,7 +345,7 @@ Then all layer IDs are unique
 ### Data Integrity
 
 - **Foreign Key Constraints**: File references validated
-- **Unique Constraints**: Title and slug uniqueness
+- **Unique Constraints**: Slug globally unique (enforced at database and application level)
 - **Soft Deletion**: Preserve template history
 - **Transaction Support**: ACID compliance
 - **Version Control**: Maintain template evolution history
@@ -366,7 +367,7 @@ Then all layer IDs are unique
 ```sql
 CREATE TABLE templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(200) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
   slug VARCHAR(250) NOT NULL UNIQUE,
   description TEXT,
   category VARCHAR(100),
@@ -405,6 +406,7 @@ CREATE TABLE templates (
   INDEX idx_templates_slug (slug),
   INDEX idx_templates_deleted_at (deleted_at),
   INDEX idx_templates_usage_count (usage_count DESC),
+  INDEX idx_templates_title (title),  -- For title searches
 
   -- Full-text search
   INDEX idx_templates_search USING gin(to_tsvector('english', title || ' ' || COALESCE(description, ''))),
@@ -412,6 +414,7 @@ CREATE TABLE templates (
   -- Constraints
   CONSTRAINT chk_status CHECK (status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED', 'UNPUBLISHED')),
   CONSTRAINT chk_canvas_dimensions CHECK (canvas_width > 0 AND canvas_height > 0)
+  -- Note: No unique constraint on title - uniqueness enforced via slug only
 );
 
 -- Template Tags (Many-to-Many)
@@ -790,19 +793,91 @@ Response 200 OK:
 
 ### Slug Generation
 
-Same algorithm as memes:
+Template slugs are guaranteed to be unique using the same algorithm as memes:
 
 ```typescript
-function generateTemplateSlug(title: string): string {
-  const baseSlug = title
+function generateBaseSlug(title: string): string {
+  return title
     .toString()
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
-
-  return baseSlug;
+    .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
+    .replace(/(^-|-$)+/g, '');     // Remove leading/trailing hyphens
 }
+
+function generateRandomString(length: number = 7): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+async function generateUniqueTemplateSlug(title: string): Promise<string> {
+  const baseSlug = generateBaseSlug(title);
+
+  // Check if base slug is available
+  const existingTemplate = await templatesRepository.findBySlug(baseSlug);
+
+  if (!existingTemplate) {
+    return baseSlug;
+  }
+
+  // Slug conflict detected, append random 7-character string
+  let uniqueSlug: string;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  do {
+    const randomSuffix = generateRandomString(7);
+    uniqueSlug = `${baseSlug}-${randomSuffix}`;
+
+    const conflictingTemplate = await templatesRepository.findBySlug(uniqueSlug);
+
+    if (!conflictingTemplate) {
+      return uniqueSlug;
+    }
+
+    attempts++;
+  } while (attempts < maxAttempts);
+
+  // Fallback: use timestamp-based suffix if random generation fails
+  const timestamp = Date.now().toString(36);
+  return `${baseSlug}-${timestamp}`;
+}
+```
+
+**Rules**:
+
+- Convert to lowercase
+- Replace spaces and special characters with hyphens
+- Remove leading/trailing hyphens
+- **Always unique across all templates** (enforced by database constraint and generation logic)
+- If base slug exists, append 7-character random string
+- Random string uses lowercase letters and numbers only
+- Multiple templates with same title get different random suffixes
+- Maximum 250 characters (base slug + hyphen + 7 chars)
+- Fallback to timestamp if random generation fails after 10 attempts
+
+**Examples**:
+
+```typescript
+// First template with title "Drake Meme"
+await generateUniqueTemplateSlug("Drake Meme");
+// Returns: "drake-meme"
+
+// Second template with title "Drake Meme"
+await generateUniqueTemplateSlug("Drake Meme");
+// Returns: "drake-meme-k8m3n2x"
+
+// Third template with title "Drake Meme"
+await generateUniqueTemplateSlug("Drake Meme");
+// Returns: "drake-meme-p5w9t7q"
+
+// Template with title "Super!!! Cool??? Template"
+await generateUniqueTemplateSlug("Super!!! Cool??? Template");
+// Returns: "super-cool-template"
 ```
 
 ### Layer Validation
