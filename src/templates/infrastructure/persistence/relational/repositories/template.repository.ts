@@ -1,0 +1,108 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { TemplateRepository } from '../../template.repository';
+import { InjectRepository } from '@nestjs/typeorm';
+import { TemplateEntity } from '../entities/template.entity';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { CreateTemplateDto } from '../../../../dto/create-template.dto';
+import { JwtPayloadType } from '../../../../../auth/strategies/types/jwt-payload.type';
+import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
+import {
+  IFilterOptions,
+  IPaginationOptions,
+  ISearchOptions,
+  ISortOptions,
+} from '../../../../../utils/types/pagination-options';
+import { Template } from '../../../../domain/template';
+
+@Injectable()
+export class TemplateRelationalRepository implements TemplateRepository {
+  constructor(
+    @InjectRepository(TemplateEntity)
+    private readonly templateRepository: Repository<TemplateEntity>,
+  ) {}
+
+  async create(
+    createTemplateDto: CreateTemplateDto,
+    user: JwtPayloadType,
+    slug: string,
+  ): Promise<TemplateEntity> {
+    const template = this.templateRepository.create({
+      title: createTemplateDto.title,
+      description: createTemplateDto.description ?? undefined,
+      config: createTemplateDto.config,
+      slug: slug,
+      author: { id: user.id } as UserEntity,
+    });
+
+    return this.templateRepository.save(template);
+  }
+
+  async getByTitle(title: string): Promise<TemplateEntity | null> {
+    return this.templateRepository.findOne({
+      where: { title },
+    });
+  }
+
+  async getById(id: string): Promise<TemplateEntity | null> {
+    return this.templateRepository.findOne({
+      where: { id },
+    });
+  }
+
+  async findManyWithPagination(
+    options: IPaginationOptions &
+      ISortOptions<TemplateEntity> &
+      IFilterOptions<TemplateEntity> &
+      ISearchOptions,
+  ): Promise<{ items: TemplateEntity[]; totalItems: number }> {
+    const { page, limit, orderBy, order, filter, search } = options;
+
+    const qb: SelectQueryBuilder<TemplateEntity> =
+      this.templateRepository.createQueryBuilder('template');
+    qb.orderBy(`template.${String(orderBy)}`, order);
+
+    if (filter) {
+      for (const [key, value] of Object.entries(filter)) {
+        if (value) {
+          qb.andWhere(`template.${key} ILIKE :${key}`, {
+            [key]: `%${value}%`,
+          });
+        }
+      }
+    }
+
+    if (search) {
+      qb.andWhere(`template.title ILIKE :title`, {
+        title: `%${search}%`,
+      });
+    }
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      items: data,
+      totalItems: total,
+    };
+  }
+
+  async update(
+    updateData: Partial<TemplateEntity>,
+    id: string,
+  ): Promise<TemplateEntity> {
+    const template = await this.templateRepository.preload({
+      id,
+      ...updateData,
+    });
+
+    if (!template) {
+      throw new NotFoundException('Template not found with given ID');
+    }
+
+    return this.templateRepository.save(template);
+  }
+  async softDelete(id: Template['id']) {
+    await this.templateRepository.softDelete(id);
+  }
+}

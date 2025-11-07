@@ -1,0 +1,18 @@
+{
+  "markdown.extension.toc.levels": "2..6",
+  "markdown.extension.orderedList.autoRenumber": false,
+  "typescript.preferences.importModuleSpecifier": "relative",
+
+  // --- ESLint + Prettier settings ---
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript", "typescript"],
+  "prettier.requireConfig": true,
+
+  // 👇 Force LF (Unix) line endings on save
+  "files.eol": "\n"
+}
