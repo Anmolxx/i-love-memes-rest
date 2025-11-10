@@ -98,7 +98,7 @@ export class CommentsService {
         page: query.page || 1,
         limit: query.limit || 10,
       },
-      sortBy: query.sortBy,
+      sortOptions: query.sortOptions,
     });
   }
 

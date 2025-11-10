@@ -20,5 +20,5 @@ export class QueryCommentDto {
   @ApiPropertyOptional({ enum: ['newest', 'oldest', 'popular'] })
   @IsOptional()
   @IsString()
-  sortBy?: 'newest' | 'oldest' | 'popular';
+  sortOptions?: 'newest' | 'oldest' | 'popular';
 }

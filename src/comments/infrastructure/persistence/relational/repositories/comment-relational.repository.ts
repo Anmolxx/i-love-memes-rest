@@ -38,12 +38,12 @@ export class CommentRelationalRepository implements CommentRepository {
   async findByMeme({
     memeId,
     paginationOptions,
-    sortBy = 'newest',
+    sortOptions = 'newest',
   }: {
     memeId: string;
     paginationOptions: IPaginationOptions;
-    sortBy?: 'newest' | 'oldest' | 'popular';
-  }): Promise<Comment[]> {
+    sortOptions?: 'newest' | 'oldest' | 'popular';
+  }): Promise<{ data: Comment[]; total: number }> {
     const queryBuilder = this.commentRepository
       .createQueryBuilder('comment')
       .leftJoinAndSelect('comment.author', 'author')
@@ -53,7 +53,7 @@ export class CommentRelationalRepository implements CommentRepository {
       .andWhere('comment.deletedAt IS NULL');
 
     // Apply sorting
-    switch (sortBy) {
+    switch (sortOptions) {
       case 'oldest':
         queryBuilder.orderBy('comment.createdAt', 'ASC');
         break;
@@ -71,7 +71,12 @@ export class CommentRelationalRepository implements CommentRepository {
       .take(paginationOptions.limit)
       .getMany();
 
-    return entities.map((entity) => CommentMapper.toDomain(entity));
+    const total = await queryBuilder.getCount();
+
+    return {
+      data: entities.map((entity) => CommentMapper.toDomain(entity)),
+      total,
+    };
   }
 
   async findReplies({
@@ -80,7 +85,7 @@ export class CommentRelationalRepository implements CommentRepository {
   }: {
     parentCommentId: string;
     paginationOptions: IPaginationOptions;
-  }): Promise<Comment[]> {
+  }): Promise<{ data: Comment[]; total: number }> {
     const entities = await this.commentRepository.find({
       where: {
         parentComment: { id: parentCommentId },
@@ -92,7 +97,17 @@ export class CommentRelationalRepository implements CommentRepository {
       take: paginationOptions.limit,
     });
 
-    return entities.map((entity) => CommentMapper.toDomain(entity));
+    const total = await this.commentRepository.count({
+      where: {
+        parentComment: { id: parentCommentId },
+        deletedAt: IsNull(),
+      },
+    });
+
+    return {
+      data: entities.map((entity) => CommentMapper.toDomain(entity)),
+      total,
+    };
   }
 
   async update(id: string, payload: Partial<Comment>): Promise<Comment | null> {

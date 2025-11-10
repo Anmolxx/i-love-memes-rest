@@ -48,7 +48,22 @@ export class CommentsController {
     type: String,
     description: 'Meme slug or UUID',
   })
-  @ApiOkResponse({ type: [Comment] })
+  @ApiOkResponse({
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Comment' },
+            },
+            total: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
   findByMeme(
     @Param('slugOrId') slugOrId: string,
     @Query() query: QueryCommentDto,
@@ -58,7 +73,22 @@ export class CommentsController {
 
   @Get(':id/replies')
   @ApiParam({ name: 'id', type: String })
-  @ApiOkResponse({ type: [Comment] })
+  @ApiOkResponse({
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Comment' },
+            },
+            total: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
   findReplies(@Param('id') id: string, @Query() query: QueryCommentDto) {
     return this.commentsService.findReplies(id, query);
   }

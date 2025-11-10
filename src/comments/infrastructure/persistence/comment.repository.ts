@@ -13,12 +13,12 @@ export abstract class CommentRepository {
   abstract findByMeme({
     memeId,
     paginationOptions,
-    sortBy,
+    sortOptions,
   }: {
     memeId: string;
     paginationOptions: IPaginationOptions;
-    sortBy?: 'newest' | 'oldest' | 'popular';
-  }): Promise<Comment[]>;
+    sortOptions?: 'newest' | 'oldest' | 'popular';
+  }): Promise<{ data: Comment[]; total: number }>;
 
   abstract findReplies({
     parentCommentId,
@@ -26,7 +26,7 @@ export abstract class CommentRepository {
   }: {
     parentCommentId: string;
     paginationOptions: IPaginationOptions;
-  }): Promise<Comment[]>;
+  }): Promise<{ data: Comment[]; total: number }>;
 
   abstract update(
     id: string,
