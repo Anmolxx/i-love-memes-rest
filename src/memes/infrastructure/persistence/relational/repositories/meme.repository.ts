@@ -1,5 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import {
+  isMemeFilterOptionsDto,
+  MemeFilterOptionsDto,
+  MemeSortField,
+  MemeSortOptionsDto,
+} from 'src/memes/dto/meme-filter-options.dto';
 import { Repository } from 'typeorm';
 import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
 import { Meme } from '../../../../domain/meme';
@@ -28,11 +34,8 @@ export class MemesRelationalRepository implements MemesRepository {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: any | null;
-    sortOptions: {
-      orderBy: string;
-      order: 'ASC' | 'DESC';
-    };
+    filterOptions?: MemeFilterOptionsDto | null;
+    sortOptions?: MemeSortOptionsDto;
     paginationOptions: { page: number; limit: number };
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
@@ -40,6 +43,29 @@ export class MemesRelationalRepository implements MemesRepository {
     qb.leftJoinAndSelect('meme.file', 'file')
       .leftJoinAndSelect('meme.author', 'author')
       .leftJoinAndSelect('meme.template', 'template');
+
+    if (isMemeFilterOptionsDto(filterOptions)) {
+      // Join meme_tags for tag filtering
+      if (filterOptions?.tags && filterOptions.tags.length > 0) {
+        qb.leftJoin(
+          'meme_tags',
+          'meme_tag',
+          'meme_tag.meme_id = meme.id',
+        ).andWhere(
+          'meme_tag.name IN (:...tagIds) or meme_tag.slug IN (:...tagIds)',
+          {
+            tagIds: filterOptions.tags,
+          },
+        );
+      }
+
+      // Filter by templateIds
+      if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
+        qb.andWhere('meme.template IN (:...templateIds)', {
+          templateIds: filterOptions.templateIds,
+        });
+      }
+    }
 
     qb.where('meme.audience = :audience', { audience: MemeAudience.PUBLIC });
 
@@ -49,7 +75,32 @@ export class MemesRelationalRepository implements MemesRepository {
       });
     }
 
-    qb.addOrderBy(`meme.${sortOptions.orderBy}`, sortOptions.order);
+    // Sorting logic
+    if (
+      sortOptions?.orderBy === MemeSortField.UPVOTES ||
+      sortOptions?.orderBy === MemeSortField.DOWNVOTES ||
+      sortOptions?.orderBy === MemeSortField.REPORTS
+    ) {
+      // Subquery for interaction counts
+      let interactionType = '';
+      if (sortOptions.orderBy === MemeSortField.UPVOTES)
+        interactionType = 'UPVOTE';
+      if (sortOptions.orderBy === MemeSortField.DOWNVOTES)
+        interactionType = 'DOWNVOTE';
+      if (sortOptions.orderBy === MemeSortField.REPORTS)
+        interactionType = 'REPORT';
+      qb.addSelect(
+        `(SELECT COUNT(*) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionType)`,
+        'interactionCount',
+      )
+        .setParameter('interactionType', interactionType)
+        .orderBy('interactionCount', sortOptions.order ?? 'DESC');
+    } else if (sortOptions?.orderBy) {
+      qb.addOrderBy(`meme.${sortOptions.orderBy}`, sortOptions.order ?? 'DESC');
+    } else {
+      qb.addOrderBy('meme.createdAt', 'DESC');
+    }
+
     qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
       paginationOptions.limit,
     );

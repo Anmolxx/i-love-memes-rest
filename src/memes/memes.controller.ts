@@ -18,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -28,7 +29,10 @@ import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
 import { CreateMemeDto } from './dto/create-meme.dto';
-import { MemeListQueryDto } from './dto/meme-list-query.dto';
+import {
+  MemeFilterOptionsDto,
+  MemeSortOptionsDto,
+} from './dto/meme-filter-options.dto';
 import { UpdateMemeDto } from './dto/update-meme.dto';
 import { MemesService } from './memes.service';
 
@@ -54,31 +58,37 @@ export class MemesController {
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
   @SerializeOptions({ groups: ['admin'] })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(@Query() query: MemeListQueryDto) {
-    const page = query?.page ?? 1;
-    let limit = query?.limit ?? 10;
-    if (limit > API_PAGE_LIMIT) limit = API_PAGE_LIMIT;
-    let sortOptions: {
-      orderBy: string;
-      order: 'ASC' | 'DESC';
-    } = {
-      orderBy: 'createdAt',
-      order: 'DESC',
-    };
-
-    if (query?.orderBy) {
-      sortOptions = {
-        orderBy: query?.orderBy,
-        order: query?.order === 'asc' ? 'ASC' : 'DESC',
-      };
-    }
+  async findAll(
+    @Query() filterOptions: MemeFilterOptionsDto,
+    @Query() sortOptions: MemeSortOptionsDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
 
     const { items, meta } = await this.memesService.findManyWithPagination({
-      filterOptions: { search: query?.search },
+      filterOptions,
       sortOptions,
-      paginationOptions: { page, limit } as IPaginationOptions,
+      paginationOptions: {
+        page: safePage,
+        limit: safeLimit,
+      } as IPaginationOptions,
     });
 
     return createPaginatedResponse('Memes fetched successfully', items, meta);
