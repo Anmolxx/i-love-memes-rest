@@ -1,3 +1,4 @@
+import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
 import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
 import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
 import { Meme } from '../../../../domain/meme';
@@ -14,6 +15,7 @@ export class MemeMapper {
     if (raw.template) {
       domain.template = {
         id: raw.template.id,
+        slug: raw.template.slug,
         title: raw.template.title,
       };
     }
@@ -43,7 +45,7 @@ export class MemeMapper {
     persistence.slug = domain.slug;
     persistence.description = domain.description as any;
 
-    if (domain.template) {
+    if (domain.template?.id) {
       const t = new TemplateEntity();
       t.id = domain.template.id;
       persistence.template = t;
@@ -54,9 +56,9 @@ export class MemeMapper {
     }
 
     if (domain.author) {
-      const u: any = {};
+      const u: Partial<UserEntity> = {};
       if (domain.author.id) u.id = domain.author.id;
-      persistence.author = u as any;
+      persistence.author = u as UserEntity;
     }
 
     persistence.audience = domain.audience;

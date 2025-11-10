@@ -19,6 +19,10 @@ export class CreateMemeDto {
   @Transform(({ value }) => value.trim())
   title: string;
 
+  @ApiProperty()
+  @IsOptional()
+  templateId?: string;
+
   @ApiPropertyOptional({ type: String })
   @IsOptional()
   @IsString()

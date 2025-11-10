@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
@@ -16,6 +16,10 @@ export class UpdateMemeDto {
   @IsString()
   @MaxLength(20)
   title?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  templateId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -150,7 +150,15 @@ export class MemesRelationalRepository implements MemesRepository {
   }
 
   async update(id: string, payload: Partial<Meme>): Promise<Meme> {
-    const meme = await this.memesRepository.preload({ id, ...payload });
+    const safePayload = { ...payload } as any;
+
+    if (safePayload.template && safePayload.template.description === null)
+      safePayload.template.description = undefined;
+    const meme = await this.memesRepository.preload({
+      id,
+      ...safePayload,
+    } as any);
+
     if (!meme) throw new NotFoundException('Meme not found');
     const updated = await this.memesRepository.save(meme);
     return MemeMapper.toDomain(updated);

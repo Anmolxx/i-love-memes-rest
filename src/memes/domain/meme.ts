@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Template } from 'src/templates/domain/template';
+import { User } from 'src/users/domain/user';
 import { FileType } from '../../files/domain/file';
 import { MemeAudience } from '../memes.enum';
-
-type TemplateType = any;
 
 export class Meme {
   @ApiProperty({
@@ -29,14 +29,14 @@ export class Meme {
   })
   description?: string;
 
-  @ApiProperty({ type: () => Object })
-  template?: TemplateType | null;
+  @ApiProperty({ type: () => Template })
+  template?: Partial<Template> | null;
 
   @ApiProperty({ type: () => FileType })
   file: FileType;
 
-  @ApiProperty({ type: () => Object })
-  author?: any;
+  @ApiProperty({ type: () => User })
+  author?: Partial<User> | null;
 
   @ApiProperty({
     type: String,

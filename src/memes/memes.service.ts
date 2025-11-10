@@ -5,20 +5,13 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import {
-  MemeFilterOptionsDto,
-  MemeSortOptionsDto,
-} from 'src/memes/dto/meme-filter-options.dto';
+import { MemeFilterOptionsDto, MemeSortOptionsDto, } from 'src/memes/dto/meme-filter-options.dto';
 import { FileType } from '../files/domain/file';
 import { FileStatus } from '../files/file.enum';
 import { FilesService } from '../files/files.service';
 import { User } from '../users/domain/user';
 import { PaginationMetaDto } from '../utils/dto/pagination-response.dto';
-import {
-  generateBaseSlug,
-  generateUniqueSlug,
-  isUUID,
-} from '../utils/slug.util';
+import { generateBaseSlug, generateUniqueSlug, isUUID, } from '../utils/slug.util';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
 import { CreateMemeDto } from './dto/create-meme.dto';
@@ -94,6 +87,7 @@ export class MemesService {
       file,
       audience: createMemeDto.audience,
       author: { id: user.id },
+      template: { id: createMemeDto.templateId },
     };
 
     return this.memesRepository.create(meme as Meme);
@@ -148,7 +142,7 @@ export class MemesService {
       throw new NotFoundException('Meme Not Found');
     }
 
-    if (existingMeme.author.id !== user.id) {
+    if (existingMeme.author?.id !== user.id) {
       throw new ForbiddenException('You are not allowed to update this Meme');
     }
 
@@ -221,7 +215,7 @@ export class MemesService {
       throw new NotFoundException();
     }
 
-    const isOwner = meme.author.id === user.id;
+    const isOwner = meme.author?.id === user.id;
     const isAdmin = user.role?.name === 'admin';
 
     if (!isOwner && !isAdmin) {
