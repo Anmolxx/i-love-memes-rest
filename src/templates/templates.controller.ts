@@ -21,7 +21,10 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 import { API_PAGE_LIMIT } from '../constants/common.constant';
-import { createResponse } from '../utils/base-response';
+import {
+  createPaginatedResponse,
+  createResponse,
+} from '../utils/base-response';
 import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { Template } from './domain/template';
 import { CreateTemplateDto } from './dto/create-template.dto';
@@ -72,7 +75,11 @@ export class TemplateController {
 
     const { items, meta } = await this.templateService.getAll(options);
 
-    return createResponse('Templates fetched successfully', items, meta);
+    return createPaginatedResponse(
+      'Templates fetched successfully',
+      items,
+      meta,
+    );
   }
 
   @Get(':slugOrId')

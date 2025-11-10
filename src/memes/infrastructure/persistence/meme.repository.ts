@@ -1,3 +1,4 @@
+import { PaginationMetaDto } from '../../../utils/dto/pagination-response.dto';
 import { NullableType } from '../../../utils/types/nullable.type';
 import { IPaginationOptions } from '../../../utils/types/pagination-options';
 import { Meme } from '../../domain/meme';
@@ -16,7 +17,7 @@ export abstract class MemesRepository {
       order: 'ASC' | 'DESC';
     };
     paginationOptions: IPaginationOptions;
-  }): Promise<{ data: Meme[]; total: number }>;
+  }): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
   abstract findById(id: Meme['id']): Promise<NullableType<Meme>>;
   abstract findBySlug(slug: string): Promise<NullableType<Meme>>;
   abstract findByTitle(title: string): Promise<NullableType<Meme>>;

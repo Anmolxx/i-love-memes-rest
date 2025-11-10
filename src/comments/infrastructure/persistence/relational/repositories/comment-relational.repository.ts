@@ -6,6 +6,7 @@ import { CommentRepository } from 'src/comments/infrastructure/persistence/comme
 import { NullableType } from 'src/utils/types/nullable.type';
 import { IPaginationOptions } from 'src/utils/types/pagination-options';
 import { IsNull, Repository } from 'typeorm';
+import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
 import { CommentEntity } from '../entities/comment.entity';
 import { CommentMapper } from '../mapper/comment.mapper';
 
@@ -43,7 +44,7 @@ export class CommentRelationalRepository implements CommentRepository {
     memeId: string;
     paginationOptions: IPaginationOptions;
     sortOptions?: 'newest' | 'oldest' | 'popular';
-  }): Promise<{ data: Comment[]; total: number }> {
+  }): Promise<{ items: Comment[]; meta: PaginationMetaDto }> {
     const queryBuilder = this.commentRepository
       .createQueryBuilder('comment')
       .leftJoinAndSelect('comment.author', 'author')
@@ -73,10 +74,16 @@ export class CommentRelationalRepository implements CommentRepository {
 
     const total = await queryBuilder.getCount();
 
-    return {
-      data: entities.map((entity) => CommentMapper.toDomain(entity)),
-      total,
+    const items = entities.map((entity) => CommentMapper.toDomain(entity));
+
+    const meta: PaginationMetaDto = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
     };
+
+    return { items, meta };
   }
 
   async findReplies({
@@ -85,7 +92,7 @@ export class CommentRelationalRepository implements CommentRepository {
   }: {
     parentCommentId: string;
     paginationOptions: IPaginationOptions;
-  }): Promise<{ data: Comment[]; total: number }> {
+  }): Promise<{ items: Comment[]; meta: PaginationMetaDto }> {
     const entities = await this.commentRepository.find({
       where: {
         parentComment: { id: parentCommentId },
@@ -104,10 +111,16 @@ export class CommentRelationalRepository implements CommentRepository {
       },
     });
 
-    return {
-      data: entities.map((entity) => CommentMapper.toDomain(entity)),
-      total,
+    const items = entities.map((entity) => CommentMapper.toDomain(entity));
+
+    const meta: PaginationMetaDto = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
     };
+
+    return { items, meta };
   }
 
   async update(id: string, payload: Partial<Comment>): Promise<Comment | null> {

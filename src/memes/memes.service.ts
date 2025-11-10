@@ -9,6 +9,7 @@ import { FileType } from '../files/domain/file';
 import { FileStatus } from '../files/file.enum';
 import { FilesService } from '../files/files.service';
 import { User } from '../users/domain/user';
+import { PaginationMetaDto } from '../utils/dto/pagination-response.dto';
 import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
@@ -101,7 +102,7 @@ export class MemesService {
       order: 'ASC' | 'DESC';
     };
     paginationOptions: IPaginationOptions;
-  }): Promise<{ data: Meme[]; total: number }> {
+  }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     return this.memesRepository.findManyWithPagination({
       filterOptions,
       sortOptions,

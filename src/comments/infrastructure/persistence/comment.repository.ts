@@ -1,6 +1,7 @@
 import { DeepPartial } from 'src/utils/types/deep-partial.type';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { IPaginationOptions } from 'src/utils/types/pagination-options';
+import { PaginationMetaDto } from '../../../utils/dto/pagination-response.dto';
 import { Comment } from '../../domain/comment';
 
 export abstract class CommentRepository {
@@ -18,7 +19,7 @@ export abstract class CommentRepository {
     memeId: string;
     paginationOptions: IPaginationOptions;
     sortOptions?: 'newest' | 'oldest' | 'popular';
-  }): Promise<{ data: Comment[]; total: number }>;
+  }): Promise<{ items: Comment[]; meta: PaginationMetaDto }>;
 
   abstract findReplies({
     parentCommentId,
@@ -26,7 +27,7 @@ export abstract class CommentRepository {
   }: {
     parentCommentId: string;
     paginationOptions: IPaginationOptions;
-  }): Promise<{ data: Comment[]; total: number }>;
+  }): Promise<{ items: Comment[]; meta: PaginationMetaDto }>;
 
   abstract update(
     id: string,

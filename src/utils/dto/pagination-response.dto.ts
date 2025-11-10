@@ -26,7 +26,7 @@ export class PaginationMetaDto {
 export function PaginatedResponse<T>(classRef: Type<T>) {
   class PaginatedDataDto {
     @ApiProperty({ type: [classRef] })
-    data: T[];
+    items: T[];
 
     @ApiProperty({ type: PaginationMetaDto })
     meta: PaginationMetaDto;

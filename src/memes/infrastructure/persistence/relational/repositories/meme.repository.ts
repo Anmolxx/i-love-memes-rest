@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
 import { Meme } from '../../../../domain/meme';
 import { MemeAudience } from '../../../../memes.enum';
 import { MemesRepository } from '../../meme.repository';
@@ -33,7 +34,7 @@ export class MemesRelationalRepository implements MemesRepository {
       order: 'ASC' | 'DESC';
     };
     paginationOptions: { page: number; limit: number };
-  }): Promise<{ data: Meme[]; total: number }> {
+  }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
     qb.leftJoinAndSelect('meme.file', 'file')
@@ -55,7 +56,16 @@ export class MemesRelationalRepository implements MemesRepository {
 
     const [entities, total] = await qb.getManyAndCount();
 
-    return { data: entities.map((e) => MemeMapper.toDomain(e)), total };
+    const items = entities.map((e) => MemeMapper.toDomain(e));
+
+    const meta = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
+    };
+
+    return { items, meta };
   }
 
   async findById(id: Meme['id']) {

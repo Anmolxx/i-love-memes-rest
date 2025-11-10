@@ -20,6 +20,9 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { API_PAGE_LIMIT } from '../constants/common.constant';
+import { createPaginatedResponse } from '../utils/base-response';
+import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { CommentsService } from './comments.service';
 import { Comment } from './domain/comment';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -48,49 +51,37 @@ export class CommentsController {
     type: String,
     description: 'Meme slug or UUID',
   })
-  @ApiOkResponse({
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            data: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/Comment' },
-            },
-            total: { type: 'number' },
-          },
-        },
-      },
-    },
-  })
-  findByMeme(
+  @ApiOkResponse({ type: PaginatedResponse(Comment) })
+  async findByMeme(
     @Param('slugOrId') slugOrId: string,
     @Query() query: QueryCommentDto,
   ) {
-    return this.commentsService.findByMeme(slugOrId, query);
+    let limit = query.limit || 10;
+    if (limit > API_PAGE_LIMIT) limit = API_PAGE_LIMIT;
+
+    const { items, meta } = await this.commentsService.findByMeme(
+      slugOrId,
+      query,
+    );
+
+    // repository already builds meta; ensure limit capping is respected upstream — meta.limit reflects repository limit
+    return createPaginatedResponse(
+      'Comments fetched successfully',
+      items,
+      meta,
+    );
   }
 
   @Get(':id/replies')
   @ApiParam({ name: 'id', type: String })
-  @ApiOkResponse({
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            data: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/Comment' },
-            },
-            total: { type: 'number' },
-          },
-        },
-      },
-    },
-  })
-  findReplies(@Param('id') id: string, @Query() query: QueryCommentDto) {
-    return this.commentsService.findReplies(id, query);
+  @ApiOkResponse({ type: PaginatedResponse(Comment) })
+  async findReplies(@Param('id') id: string, @Query() query: QueryCommentDto) {
+    let limit = query.limit || 10;
+    if (limit > API_PAGE_LIMIT) limit = API_PAGE_LIMIT;
+
+    const { items, meta } = await this.commentsService.findReplies(id, query);
+
+    return createPaginatedResponse('Replies fetched successfully', items, meta);
   }
 
   @Get(':id')

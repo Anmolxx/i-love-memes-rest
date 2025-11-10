@@ -1,4 +1,5 @@
 import { JwtPayloadType } from '../../../auth/strategies/types/jwt-payload.type';
+import { PaginationMetaDto } from '../../../utils/dto/pagination-response.dto';
 import {
   IFilterOptions,
   IPaginationOptions,
@@ -24,7 +25,7 @@ export abstract class TemplateRepository {
       ISortOptions<TemplateEntity> &
       IFilterOptions<TemplateEntity> &
       ISearchOptions,
-  ): Promise<{ items: TemplateEntity[]; totalItems: number }>;
+  ): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }>;
   abstract update(updateData: Partial<TemplateEntity>, id: Template['id']);
 
   abstract softDelete(id: Template['id']);

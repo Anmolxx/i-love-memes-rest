@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Comment } from 'src/comments/domain/comment';
+import { API_PAGE_LIMIT } from 'src/constants/common.constant';
 import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { CommentStatus } from './comments.enum';
@@ -92,11 +93,15 @@ export class CommentsService {
       );
     }
 
+    const page = query.page || 1;
+    let limit = query.limit || 10;
+    if (limit > API_PAGE_LIMIT) limit = API_PAGE_LIMIT;
+
     return this.commentRepository.findByMeme({
       memeId: meme.id,
       paginationOptions: {
-        page: query.page || 1,
-        limit: query.limit || 10,
+        page,
+        limit,
       },
       sortOptions: query.sortOptions,
     });
@@ -110,11 +115,15 @@ export class CommentsService {
       throw new NotFoundException('Parent comment not found');
     }
 
+    const page = query.page || 1;
+    let limit = query.limit || 10;
+    if (limit > API_PAGE_LIMIT) limit = API_PAGE_LIMIT;
+
     return this.commentRepository.findReplies({
       parentCommentId,
       paginationOptions: {
-        page: query.page || 1,
-        limit: query.limit || 10,
+        page,
+        limit,
       },
     });
   }
@@ -152,13 +161,11 @@ export class CommentsService {
       );
     }
 
-    const updatedComment = await this.commentRepository.update(id, {
+    return this.commentRepository.update(id, {
       content: updateCommentDto.content,
       status: CommentStatus.EDITED,
       editedAt: now,
     } as any);
-
-    return updatedComment;
   }
 
   async remove(id: string, userId: string) {

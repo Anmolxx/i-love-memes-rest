@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { JwtPayloadType } from '../../../../../auth/strategies/types/jwt-payload.type';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
+import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
 import {
   IFilterOptions,
   IPaginationOptions,
@@ -60,7 +61,7 @@ export class TemplateRelationalRepository implements TemplateRepository {
       ISortOptions<TemplateEntity> &
       IFilterOptions<TemplateEntity> &
       ISearchOptions,
-  ): Promise<{ items: TemplateEntity[]; totalItems: number }> {
+  ): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }> {
     const { page, limit, orderBy, order, filter, search } = options;
 
     const qb: SelectQueryBuilder<TemplateEntity> =
@@ -87,9 +88,16 @@ export class TemplateRelationalRepository implements TemplateRepository {
 
     const [data, total] = await qb.getManyAndCount();
 
+    const meta: PaginationMetaDto = {
+      totalItems: total,
+      totalPages: Math.ceil(total / limit) || 1,
+      currentPage: page,
+      limit,
+    };
+
     return {
       items: data,
-      totalItems: total,
+      meta,
     };
   }
 

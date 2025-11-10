@@ -23,7 +23,7 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { API_PAGE_LIMIT } from '../constants/common.constant';
 import { User } from '../users/domain/user';
-import { createResponse } from '../utils/base-response';
+import { createPaginatedResponse } from '../utils/base-response';
 import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
@@ -75,20 +75,13 @@ export class MemesController {
       };
     }
 
-    const { data, total } = await this.memesService.findManyWithPagination({
+    const { items, meta } = await this.memesService.findManyWithPagination({
       filterOptions: { search: query?.search },
       sortOptions,
       paginationOptions: { page, limit } as IPaginationOptions,
     });
 
-    const metaData = {
-      currentPage: page,
-      limit,
-      totalItems: total,
-      totalPages: Math.ceil(total / limit) || 1,
-    };
-
-    return createResponse('Memes fetched successfully', data, metaData);
+    return createPaginatedResponse('Memes fetched successfully', items, meta);
   }
 
   @ApiOkResponse({ type: [Meme] })

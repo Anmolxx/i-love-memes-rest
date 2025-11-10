@@ -5,7 +5,6 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
-import { FilesService } from '../files/files.service';
 import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
 import {
   IFilterOptions,
@@ -22,10 +21,7 @@ import { TemplateRepository } from './infrastructure/persistence/template.reposi
 
 @Injectable()
 export class TemplateService {
-  constructor(
-    private readonly templateRepository: TemplateRepository,
-    private readonly filesService: FilesService,
-  ) {}
+  constructor(private readonly templateRepository: TemplateRepository) {}
 
   async create(createTemplateDto: CreateTemplateDto, user: JwtPayloadType) {
     const isExist = await this.templateRepository.getByTitle(
@@ -95,17 +91,14 @@ export class TemplateService {
       search,
     };
 
-    const { items, totalItems } =
+    const { items: entities, meta } =
       await this.templateRepository.findManyWithPagination(repoOptions);
+
+    const items = entities.map((e) => TemplateMapper.toDomain(e));
 
     return {
       items,
-      meta: {
-        totalItems,
-        totalPages: Math.ceil(totalItems / paginationOptions.limit),
-        currentPage: paginationOptions.page,
-        limit: paginationOptions.limit,
-      },
+      meta,
     };
   }
 
@@ -164,12 +157,7 @@ export class TemplateService {
       slug,
     };
 
-    const updatedTemplate = await this.templateRepository.update(
-      updateData,
-      existingTemplate.id,
-    );
-
-    return updatedTemplate;
+    return this.templateRepository.update(updateData, existingTemplate.id);
   }
 
   async delete(slugOrId: string) {
