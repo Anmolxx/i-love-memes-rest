@@ -5,6 +5,11 @@ services:
       - ${DATABASE_PORT}:5432
     volumes:
       - application-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME} -h 127.0.0.1 || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
     environment:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -23,6 +28,9 @@ services:
     restart: always
     ports:
       - 8080:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Uncomment to use redis
   # redis:
@@ -36,8 +44,19 @@ services:
       dockerfile: Dockerfile
     ports:
       - ${APP_PORT}:${APP_PORT}
+    volumes:
+      - filesystem:/usr/files
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
+  filesystem:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./files
   application-db:
     driver: local
     driver_opts:
