@@ -4,7 +4,7 @@ services:
     ports:
       - ${DATABASE_PORT}:5432
     volumes:
-      - boilerplate-db:/var/lib/postgresql/data
+      - application-db:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -38,4 +38,9 @@ services:
       - ${APP_PORT}:${APP_PORT}
 
 volumes:
-  boilerplate-db:
+  application-db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./postgres-data
