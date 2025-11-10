@@ -45,7 +45,7 @@ services:
     ports:
       - ${APP_PORT}:${APP_PORT}
     volumes:
-      - filesystem:/usr/files
+      - filesystem:/usr/src/app/files
     depends_on:
       postgres:
         condition: service_healthy
