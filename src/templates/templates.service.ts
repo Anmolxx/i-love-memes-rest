@@ -5,7 +5,11 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
-import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
+import {
+  generateBaseSlug,
+  generateUniqueSlug,
+  isUUID,
+} from '../utils/slug.util';
 import {
   IFilterOptions,
   IPaginationOptions,
@@ -60,8 +64,8 @@ export class TemplateService {
     // Try to find by slug first (more user-friendly)
     let template = await this.templateRepository.findBySlug(slugOrId);
 
-    // If not found by slug, try by ID
-    if (!template) {
+    // If not found by slug, only try by ID when the input is a valid UUID
+    if (!template && isUUID(slugOrId)) {
       template = await this.templateRepository.getById(slugOrId);
     }
 
@@ -110,8 +114,8 @@ export class TemplateService {
     // Try to find by slug first
     let existingTemplate = await this.templateRepository.findBySlug(slugOrId);
 
-    // If not found by slug, try by ID
-    if (!existingTemplate) {
+    // If not found by slug, only try by ID when the input is a valid UUID
+    if (!existingTemplate && isUUID(slugOrId)) {
       existingTemplate = await this.templateRepository.getById(slugOrId);
     }
 
@@ -164,8 +168,8 @@ export class TemplateService {
     // Try to find by slug first
     let template = await this.templateRepository.findBySlug(slugOrId);
 
-    // If not found by slug, try by ID
-    if (!template) {
+    // If not found by slug, only try by ID when the input is a valid UUID
+    if (!template && isUUID(slugOrId)) {
       template = await this.templateRepository.getById(slugOrId);
     }
 

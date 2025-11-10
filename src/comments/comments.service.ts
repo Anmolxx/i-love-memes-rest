@@ -7,6 +7,7 @@ import {
 import { Comment } from 'src/comments/domain/comment';
 import { API_PAGE_LIMIT } from 'src/constants/common.constant';
 import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
+import { isUUID } from 'src/utils/slug.util';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { CommentStatus } from './comments.enum';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -29,7 +30,7 @@ export class CommentsService {
 
     // Resolve meme slug to ID
     let meme = await this.memeRepository.findBySlug(memeSlugOrId);
-    if (!meme) {
+    if (!meme && isUUID(memeSlugOrId)) {
       meme = await this.memeRepository.findById(memeSlugOrId);
     }
     if (!meme) {
@@ -84,7 +85,7 @@ export class CommentsService {
   async findByMeme(memeSlugOrId: string, query: QueryCommentDto) {
     // Resolve meme slug to ID
     let meme = await this.memeRepository.findBySlug(memeSlugOrId);
-    if (!meme) {
+    if (!meme && isUUID(memeSlugOrId)) {
       meme = await this.memeRepository.findById(memeSlugOrId);
     }
     if (!meme) {
