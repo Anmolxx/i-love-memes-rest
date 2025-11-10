@@ -120,7 +120,7 @@ export class MemesController {
   })
   async findOne(@Param('slugOrId') slugOrId: string) {
     const meme = await this.memesService.findOne(slugOrId);
-    console.log(meme);
+
     return {
       success: true,
       message: 'Meme fetched successfully',

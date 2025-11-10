@@ -32,7 +32,7 @@ export class MemeEntity extends EntityRelationalHelper {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @ManyToOne(() => TemplateEntity, { nullable: true })
+  @ManyToOne(() => TemplateEntity, { nullable: true, eager: true })
   @JoinColumn()
   template: TemplateEntity | null;
 
