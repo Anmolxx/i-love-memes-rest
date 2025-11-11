@@ -6,7 +6,7 @@ import {
   MemeSortField,
   MemeSortOptionsDto,
 } from 'src/memes/dto/meme-filter-options.dto';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
 import { Meme } from '../../../../domain/meme';
 import { MemeAudience } from '../../../../memes.enum';
@@ -40,66 +40,12 @@ export class MemesRelationalRepository implements MemesRepository {
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
-    qb.leftJoinAndSelect('meme.file', 'file')
-      .leftJoinAndSelect('meme.author', 'author')
-      .leftJoinAndSelect('meme.template', 'template');
-
-    if (isMemeFilterOptionsDto(filterOptions)) {
-      // Join meme_tags for tag filtering
-      if (filterOptions?.tags && filterOptions.tags.length > 0) {
-        qb.leftJoin(
-          'meme_tags',
-          'meme_tag',
-          'meme_tag.meme_id = meme.id',
-        ).andWhere(
-          'meme_tag.name IN (:...tagIds) or meme_tag.slug IN (:...tagIds)',
-          {
-            tagIds: filterOptions.tags,
-          },
-        );
-      }
-
-      // Filter by templateIds
-      if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
-        qb.andWhere('meme.template IN (:...templateIds)', {
-          templateIds: filterOptions.templateIds,
-        });
-      }
-    }
-
-    qb.where('meme.audience = :audience', { audience: MemeAudience.PUBLIC });
-
-    if (filterOptions?.search) {
-      qb.andWhere('meme.title ILIKE :search', {
-        search: `%${filterOptions.search}%`,
-      });
-    }
-
-    // Sorting logic
-    if (
-      sortOptions?.orderBy === MemeSortField.UPVOTES ||
-      sortOptions?.orderBy === MemeSortField.DOWNVOTES ||
-      sortOptions?.orderBy === MemeSortField.REPORTS
-    ) {
-      // Subquery for interaction counts
-      let interactionType = '';
-      if (sortOptions.orderBy === MemeSortField.UPVOTES)
-        interactionType = 'UPVOTE';
-      if (sortOptions.orderBy === MemeSortField.DOWNVOTES)
-        interactionType = 'DOWNVOTE';
-      if (sortOptions.orderBy === MemeSortField.REPORTS)
-        interactionType = 'REPORT';
-      qb.addSelect(
-        `(SELECT COUNT(*) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionType)`,
-        'interactionCount',
-      )
-        .setParameter('interactionType', interactionType)
-        .orderBy('interactionCount', sortOptions.order ?? 'DESC');
-    } else if (sortOptions?.orderBy) {
-      qb.addOrderBy(`meme.${sortOptions.orderBy}`, sortOptions.order ?? 'DESC');
-    } else {
-      qb.addOrderBy('meme.createdAt', 'DESC');
-    }
+    // Use the shared helper and enforce public audience for the general listing
+    this.applyCommonQueryOptions(qb, {
+      filterOptions,
+      sortOptions,
+      enforceAudiencePublic: true,
+    });
 
     qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
       paginationOptions.limit,
@@ -168,16 +114,136 @@ export class MemesRelationalRepository implements MemesRepository {
     await this.memesRepository.softDelete(id);
   }
 
-  async findByAuthorId(userId: string): Promise<Meme[]> {
+  // Updated findByAuthorId to accept and return paginated results similar to findManyWithPagination
+  async findByAuthorId(
+    userId: string,
+    {
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    }: {
+      filterOptions?: MemeFilterOptionsDto | null;
+      sortOptions?: MemeSortOptionsDto;
+      paginationOptions: { page: number; limit: number };
+    } = { paginationOptions: { page: 1, limit: 10 } },
+  ): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
     qb.leftJoinAndSelect('meme.file', 'file')
       .leftJoinAndSelect('meme.author', 'author')
       .leftJoinAndSelect('meme.template', 'template')
       .where('author.id = :userId', { userId })
+      // keep only non-deleted memes for an author's listing
       .andWhere('meme.deletedAt IS NULL');
 
-    const entities = await qb.getMany();
-    return entities.map((e) => MemeMapper.toDomain(e));
+    // Reuse the common query options but don't enforce public audience here
+    this.applyCommonQueryOptions(qb, {
+      filterOptions,
+      sortOptions,
+      enforceAudiencePublic: false,
+    });
+
+    // Ensure default pagination options if caller didn't provide any
+    const effectivePagination = paginationOptions ?? { page: 1, limit: 10 };
+
+    qb.skip((effectivePagination.page - 1) * effectivePagination.limit).take(
+      effectivePagination.limit,
+    );
+
+    const [entities, total] = await qb.getManyAndCount();
+
+    const items = entities.map((e) => MemeMapper.toDomain(e));
+
+    const meta = {
+      totalItems: total,
+      totalPages: Math.ceil(total / effectivePagination.limit) || 1,
+      currentPage: effectivePagination.page,
+      limit: effectivePagination.limit,
+    };
+
+    return { items, meta };
+  }
+
+  /**
+   * Shared helper that applies joins, filters and sorting to the provided QueryBuilder.
+   * - If enforceAudiencePublic is true, it will add a filter to only include PUBLIC memes.
+   * - It will also apply tag/template filters, search filter and sorting logic.
+   */
+  private applyCommonQueryOptions(
+    qb: SelectQueryBuilder<MemeEntity>,
+    opts: {
+      filterOptions?: MemeFilterOptionsDto | null;
+      sortOptions?: MemeSortOptionsDto;
+      enforceAudiencePublic?: boolean;
+    },
+  ) {
+    const { filterOptions, sortOptions, enforceAudiencePublic } = opts;
+
+    // Ensure joins are present (if not already joined by caller)
+    // Left joins are idempotent in TypeORM if used consistently
+    qb.leftJoinAndSelect('meme.file', 'file')
+      .leftJoinAndSelect('meme.author', 'author')
+      .leftJoinAndSelect('meme.template', 'template');
+
+    if (isMemeFilterOptionsDto(filterOptions)) {
+      // Join meme_tags for tag filtering
+      if (filterOptions?.tags && filterOptions.tags.length > 0) {
+        qb.leftJoin(
+          'meme_tags',
+          'meme_tag',
+          'meme_tag.meme_id = meme.id',
+        ).andWhere(
+          'meme_tag.name IN (:...tagIds) or meme_tag.slug IN (:...tagIds)',
+          {
+            tagIds: filterOptions.tags,
+          },
+        );
+      }
+
+      // Filter by templateIds
+      if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
+        qb.andWhere('meme.template IN (:...templateIds)', {
+          templateIds: filterOptions.templateIds,
+        });
+      }
+    }
+
+    if (enforceAudiencePublic) {
+      qb.andWhere('meme.audience = :audience', {
+        audience: MemeAudience.PUBLIC,
+      });
+    }
+
+    if (filterOptions?.search) {
+      qb.andWhere('meme.title ILIKE :search', {
+        search: `%${filterOptions.search}%`,
+      });
+    }
+
+    // Sorting logic
+    if (
+      sortOptions?.orderBy === MemeSortField.UPVOTES ||
+      sortOptions?.orderBy === MemeSortField.DOWNVOTES ||
+      sortOptions?.orderBy === MemeSortField.REPORTS
+    ) {
+      // Subquery for interaction counts
+      let interactionType = '';
+      if (sortOptions.orderBy === MemeSortField.UPVOTES)
+        interactionType = 'UPVOTE';
+      if (sortOptions.orderBy === MemeSortField.DOWNVOTES)
+        interactionType = 'DOWNVOTE';
+      if (sortOptions.orderBy === MemeSortField.REPORTS)
+        interactionType = 'REPORT';
+      qb.addSelect(
+        `(SELECT COUNT(*) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionType)`,
+        'interactionCount',
+      )
+        .setParameter('interactionType', interactionType)
+        .orderBy('interactionCount', sortOptions.order ?? 'DESC');
+    } else if (sortOptions?.orderBy) {
+      qb.addOrderBy(`meme.${sortOptions.orderBy}`, sortOptions.order ?? 'DESC');
+    } else {
+      qb.addOrderBy('meme.createdAt', 'DESC');
+    }
   }
 }

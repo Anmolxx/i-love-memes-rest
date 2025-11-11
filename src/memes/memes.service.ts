@@ -234,11 +234,28 @@ export class MemesService {
     await this.memesRepository.remove(meme.id);
   }
 
-  async findMyMemes(user: User): Promise<Meme[]> {
+  async findMyMemes(
+    user: User,
+    {
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    }: {
+      filterOptions?: MemeFilterOptionsDto | null;
+      sortOptions?: MemeSortOptionsDto;
+      paginationOptions?: IPaginationOptions;
+    } = { paginationOptions: { page: 1, limit: 10 } },
+  ): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     if (!user || !user.id) {
       throw new ForbiddenException('User not authenticated');
     }
 
-    return this.memesRepository.findByAuthorId(user.id);
+    const effectivePagination = paginationOptions ?? { page: 1, limit: 10 };
+
+    return this.memesRepository.findByAuthorId(user.id, {
+      filterOptions,
+      sortOptions,
+      paginationOptions: effectivePagination,
+    });
   }
 }

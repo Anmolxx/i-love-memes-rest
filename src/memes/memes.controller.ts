@@ -100,13 +100,43 @@ export class MemesController {
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  async findMyMemes(@CurrentUser() user: User) {
-    const memes = await this.memesService.findMyMemes(user);
-    return {
-      success: true,
-      message: 'User memes fetched successfully',
-      data: memes,
-    };
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  async findMyMemes(
+    @CurrentUser() user: User,
+    @Query() filterOptions: MemeFilterOptionsDto,
+    @Query() sortOptions: MemeSortOptionsDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+
+    const { items, meta } = await this.memesService.findMyMemes(user, {
+      filterOptions,
+      sortOptions,
+      paginationOptions: {
+        page: safePage,
+        limit: safeLimit,
+      } as IPaginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'User memes fetched successfully',
+      items,
+      meta,
+    );
   }
 
   @ApiOkResponse({ type: Meme })

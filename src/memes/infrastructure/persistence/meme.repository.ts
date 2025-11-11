@@ -25,5 +25,12 @@ export abstract class MemesRepository {
   abstract findByFileId(fileId: string): Promise<NullableType<Meme>>;
   abstract update(id: Meme['id'], payload: Partial<Meme>): Promise<Meme>;
   abstract remove(id: Meme['id']): Promise<void>;
-  abstract findByAuthorId(userId: string): Promise<Meme[]>;
+  abstract findByAuthorId(
+    userId: string,
+    args: {
+      filterOptions?: MemeFilterOptionsDto | null;
+      sortOptions?: MemeSortOptionsDto;
+      paginationOptions: IPaginationOptions;
+    },
+  ): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
 }
