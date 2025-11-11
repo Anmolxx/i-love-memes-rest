@@ -15,14 +15,44 @@ import validationOptions from './utils/validation-options';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
-  useContainer(app.select(AppModule), { fallbackOnErrors: true });
+
+  // obtain configService early so we can configure CORS from env/config
   const configService = app.get(ConfigService<AllConfigType>);
+
+  // Read allowed origins from config or env; fallback to true (reflect origin)
+  const rawOrigins =
+    configService.get<string>('app.corsOrigins', { infer: true }) ||
+    process.env.CORS_ORIGINS ||
+    '';
+
+  const allowedOrigins = rawOrigins
+    ? rawOrigins.split(',').map((s) => s.trim())
+    : null; // null => allow reflection of origin (origin: true)
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // allow non-browser requests like curl/postman (no origin)
+      if (!origin) return callback(null, true);
+      if (!allowedOrigins) return callback(null, true); // reflect origin
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      process.env.APP_HEADER_LANGUAGE || 'x-custom-lang',
+    ],
+    // don't continue to the route handler for preflight requests; respond here
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
+
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
   app.enableShutdownHooks();
   app.setGlobalPrefix(
