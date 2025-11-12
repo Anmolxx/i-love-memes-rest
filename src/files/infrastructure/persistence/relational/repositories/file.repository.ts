@@ -62,4 +62,18 @@ export class FileRelationalRepository implements FileRepository {
     await this.fileRepository.delete(id);
     return null;
   }
+
+  async findManyWithPagination(
+    page: number,
+    limit: number,
+  ): Promise<{ items: FileType[]; totalItems: number }> {
+    const [entities, totalItems] = await this.fileRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      items: entities.map(FileMapper.toDomain),
+      totalItems,
+    };
+  }
 }

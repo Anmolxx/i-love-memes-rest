@@ -72,4 +72,10 @@ export class FilesLocalService {
 
     await this.fileRepository.deleteById(id);
   }
+
+  async getPaginatedFiles(page: number, limit: number) {
+    const { items, totalItems } =
+      await this.fileRepository.findManyWithPagination(page, limit);
+    return { items, totalItems };
+  }
 }

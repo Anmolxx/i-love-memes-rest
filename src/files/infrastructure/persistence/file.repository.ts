@@ -15,4 +15,9 @@ export abstract class FileRepository {
   ): Promise<FileType | null>;
 
   abstract deleteById(id: FileType['id']): Promise<null>;
+
+  abstract findManyWithPagination(
+    page: number,
+    limit: number,
+  ): Promise<{ items: FileType[]; totalItems: number }>;
 }

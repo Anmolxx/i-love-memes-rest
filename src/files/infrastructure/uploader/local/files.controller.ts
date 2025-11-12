@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Response,
   UploadedFile,
   UseGuards,
@@ -22,6 +23,14 @@ import {
   ApiExcludeEndpoint,
   ApiTags,
 } from '@nestjs/swagger';
+import { FileType } from 'src/files/domain/file';
+import { Roles } from 'src/roles/roles.decorator';
+import { RoleEnum } from 'src/roles/roles.enum';
+import { createPaginatedResponse } from 'src/utils/base-response';
+import {
+  PaginatedResponse,
+  PaginationMetaDto,
+} from '../../../../utils/dto/pagination-response.dto';
 import { FileResponseDto } from './dto/file-response.dto';
 import { FilesLocalService } from './files.service';
 
@@ -75,5 +84,33 @@ export class FilesLocalController {
     @Param('fileId', new ParseUUIDPipe()) fileId: string,
   ): Promise<void> {
     await this.filesService.delete(fileId);
+  }
+
+  @Get('admin/files')
+  @Roles(RoleEnum.admin)
+  @ApiBearerAuth()
+  @ApiCreatedResponse({
+    type: PaginatedResponse(FileType),
+  })
+  async getPaginatedFiles(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    const { items, totalItems } = await this.filesService.getPaginatedFiles(
+      page,
+      limit,
+    );
+    const meta: PaginationMetaDto = {
+      currentPage: page,
+      limit,
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+    };
+
+    return createPaginatedResponse(
+      'User memes fetched successfully',
+      items,
+      meta,
+    );
   }
 }
