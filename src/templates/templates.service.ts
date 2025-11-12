@@ -4,7 +4,9 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { TagRepository } from 'src/tags/infrastructure/persistence/tag.repository';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
+import { TagsService } from '../tags/tags.service';
 import {
   generateBaseSlug,
   generateUniqueSlug,
@@ -25,7 +27,11 @@ import { TemplateRepository } from './infrastructure/persistence/template.reposi
 
 @Injectable()
 export class TemplateService {
-  constructor(private readonly templateRepository: TemplateRepository) {}
+  constructor(
+    private readonly templateRepository: TemplateRepository,
+    private readonly tagsService: TagsService,
+    private readonly tagRepository: TagRepository,
+  ) {}
 
   async create(createTemplateDto: CreateTemplateDto, user: JwtPayloadType) {
     const isExist = await this.templateRepository.getByTitle(
@@ -49,6 +55,15 @@ export class TemplateService {
       user,
       slug,
     );
+    // Handle tags
+    if (createTemplateDto.tags && createTemplateDto.tags.length > 0) {
+      const tags = await this.tagsService.findOrCreate({
+        names: createTemplateDto.tags,
+      });
+      for (const tag of tags) {
+        await this.tagRepository.linkTagToTemplate(template.id, tag.id);
+      }
+    }
     return TemplateMapper.toDomain(template);
   }
 
@@ -160,8 +175,35 @@ export class TemplateService {
       config: updateTemplateDto.config,
       slug,
     };
-
-    return this.templateRepository.update(updateData, existingTemplate.id);
+    const updatedTemplate = await this.templateRepository.update(
+      updateData,
+      existingTemplate.id,
+    );
+    // Handle tags
+    if (updateTemplateDto.tags) {
+      // Remove old tags
+      // You should implement a method in TagRepository to remove all links for a template if needed
+      // For now, assume such a method exists: removeAllTagLinksForTemplate(templateId)
+      if (
+        typeof this.tagRepository.removeAllTagLinksForTemplate === 'function'
+      ) {
+        await this.tagRepository.removeAllTagLinksForTemplate(
+          existingTemplate.id,
+        );
+      }
+      if (updateTemplateDto.tags.length > 0) {
+        const tags = await this.tagsService.findOrCreate({
+          names: updateTemplateDto.tags,
+        });
+        for (const tag of tags) {
+          await this.tagRepository.linkTagToTemplate(
+            existingTemplate.id,
+            tag.id,
+          );
+        }
+      }
+    }
+    return updatedTemplate;
   }
 
   async delete(slugOrId: string) {

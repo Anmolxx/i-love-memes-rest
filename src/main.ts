@@ -75,7 +75,7 @@ async function bootstrap() {
   const options = new DocumentBuilder()
     .setTitle('I Love Memes API')
     .setDescription('I Love Memes Docs')
-    .setVersion('1.0')
+    .setVersion('1.0.0-rc4')
     .addBearerAuth()
     .addGlobalParameters({
       in: 'header',

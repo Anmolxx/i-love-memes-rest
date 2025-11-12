@@ -50,4 +50,8 @@ export class CreateTemplateDto {
   @IsNotEmpty()
   @IsObject()
   config: Record<string, any>;
+
+  @ApiPropertyOptional({ type: [String], description: 'Tags for the template' })
+  @IsOptional()
+  tags?: string[];
 }

@@ -6,6 +6,8 @@ import { IPaginationOptions } from 'src/utils/types/pagination-options';
 import { In, Repository } from 'typeorm';
 
 import { TagEntity } from '../entities/tag.entity';
+import { MemeTagEntity } from '../entities/meme-tag.entity';
+import { TemplateTagEntity } from '../entities/template-tag.entity';
 import { TagMapper } from '../mapper/tag.mapper';
 import { TagRepository } from './tag.repository';
 
@@ -14,6 +16,10 @@ export class TagRelationalRepository implements TagRepository {
   constructor(
     @InjectRepository(TagEntity)
     private readonly tagRepository: Repository<TagEntity>,
+    @InjectRepository(MemeTagEntity)
+    private readonly memeTagRepository: Repository<MemeTagEntity>,
+    @InjectRepository(TemplateTagEntity)
+    private readonly templateTagRepository: Repository<TemplateTagEntity>,
   ) {}
 
   async create(
@@ -128,6 +134,30 @@ export class TagRelationalRepository implements TagRepository {
 
   async decrementUsageCount(id: Tag['id']): Promise<void> {
     await this.tagRepository.decrement({ id }, 'usageCount', 1);
+  }
+
+  async linkTagToMeme(memeId: string, tagId: string): Promise<void> {
+    const memeTag = this.memeTagRepository.create({
+      meme: { id: memeId } as any,
+      tag: { id: tagId } as any,
+    });
+    await this.memeTagRepository.save(memeTag);
+  }
+
+  async linkTagToTemplate(templateId: string, tagId: string): Promise<void> {
+    const templateTag = this.templateTagRepository.create({
+      template: { id: templateId } as any,
+      tag: { id: tagId } as any,
+    });
+    await this.templateTagRepository.save(templateTag);
+  }
+
+  async removeAllTagLinksForMeme(memeId: string): Promise<void> {
+    await this.memeTagRepository.delete({ meme: { id: memeId } });
+  }
+
+  async removeAllTagLinksForTemplate(templateId: string): Promise<void> {
+    await this.templateTagRepository.delete({ template: { id: templateId } });
   }
 
   private normalizeTagName(name: string): {

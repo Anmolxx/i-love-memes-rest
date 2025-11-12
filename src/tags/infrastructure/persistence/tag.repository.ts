@@ -39,4 +39,9 @@ export abstract class TagRepository {
   abstract incrementUsageCount(id: Tag['id']): Promise<void>;
 
   abstract decrementUsageCount(id: Tag['id']): Promise<void>;
+
+  abstract linkTagToMeme(memeId: string, tagId: string): Promise<void>;
+  abstract linkTagToTemplate(templateId: string, tagId: string): Promise<void>;
+  abstract removeAllTagLinksForMeme(memeId: string): Promise<void>;
+  abstract removeAllTagLinksForTemplate(templateId: string): Promise<void>;
 }

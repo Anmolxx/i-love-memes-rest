@@ -188,16 +188,13 @@ export class MemesRelationalRepository implements MemesRepository {
     if (isMemeFilterOptionsDto(filterOptions)) {
       // Join meme_tags for tag filtering
       if (filterOptions?.tags && filterOptions.tags.length > 0) {
-        qb.leftJoin(
-          'meme_tags',
-          'meme_tag',
-          'meme_tag.meme_id = meme.id',
-        ).andWhere(
-          'meme_tag.name IN (:...tagIds) or meme_tag.slug IN (:...tagIds)',
-          {
+        qb.leftJoin('meme_tags', 'meme_tag', 'meme_tag.meme_id = meme.id')
+          .leftJoin('tags', 'tag', 'tag.id = meme_tag.tag_id')
+          .andWhere('(tag.name IN (:...tagIds) OR tag.slug IN (:...tagIds))', {
             tagIds: filterOptions.tags,
-          },
-        );
+          })
+          // When joining tags, duplicates can appear; ensure distinct memes are returned
+          .distinct(true);
       }
 
       // Filter by templateIds

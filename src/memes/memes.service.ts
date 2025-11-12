@@ -9,9 +9,11 @@ import {
   MemeFilterOptionsDto,
   MemeSortOptionsDto,
 } from 'src/memes/dto/meme-filter-options.dto';
+import { TagRepository } from 'src/tags/infrastructure/persistence/tag.repository';
 import { FileType } from '../files/domain/file';
 import { FileStatus } from '../files/file.enum';
 import { FilesService } from '../files/files.service';
+import { TagsService } from '../tags/tags.service';
 import { User } from '../users/domain/user';
 import { PaginationMetaDto } from '../utils/dto/pagination-response.dto';
 import {
@@ -30,6 +32,8 @@ export class MemesService {
   constructor(
     private readonly memesRepository: MemesRepository,
     private readonly filesService: FilesService,
+    private readonly tagsService: TagsService,
+    private readonly tagRepository: TagRepository,
   ) {}
 
   async create(createMemeDto: CreateMemeDto, user: User): Promise<Meme> {
@@ -96,8 +100,17 @@ export class MemesService {
       author: { id: user.id },
       template: { id: createMemeDto.templateId },
     };
-
-    return this.memesRepository.create(meme as Meme);
+    const createdMeme = await this.memesRepository.create(meme as Meme);
+    // Handle tags
+    if (createMemeDto.tags && createMemeDto.tags.length > 0) {
+      const tags = await this.tagsService.findOrCreate({
+        names: createMemeDto.tags,
+      });
+      for (const tag of tags) {
+        await this.tagRepository.linkTagToMeme(createdMeme.id, tag.id);
+      }
+    }
+    return createdMeme;
   }
 
   findManyWithPagination({
@@ -199,14 +212,31 @@ export class MemesService {
         return !!found && found.id !== existingMeme.id;
       });
     }
-
-    return this.memesRepository.update(existingMeme.id, {
+    const updatedMeme = await this.memesRepository.update(existingMeme.id, {
       title: updateMemeDto.title,
       slug,
       description: updateMemeDto.description ?? undefined,
       file,
       audience: updateMemeDto.audience,
     } as Meme);
+    // Handle tags
+    if (updateMemeDto.tags) {
+      // Remove old tags
+      // You should implement a method in TagRepository to remove all links for a meme if needed
+      // For now, assume such a method exists: removeAllTagLinksForMeme(memeId)
+      if (typeof this.tagRepository.removeAllTagLinksForMeme === 'function') {
+        await this.tagRepository.removeAllTagLinksForMeme(existingMeme.id);
+      }
+      if (updateMemeDto.tags.length > 0) {
+        const tags = await this.tagsService.findOrCreate({
+          names: updateMemeDto.tags,
+        });
+        for (const tag of tags) {
+          await this.tagRepository.linkTagToMeme(existingMeme.id, tag.id);
+        }
+      }
+    }
+    return updatedMeme;
   }
 
   async remove(slugOrId: string, user: User): Promise<void> {

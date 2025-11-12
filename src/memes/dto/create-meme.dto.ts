@@ -39,4 +39,9 @@ export class CreateMemeDto {
   @IsOptional()
   @IsEnum(MemeAudience)
   audience?: MemeAudience;
+
+  @ApiPropertyOptional({ type: [String], description: 'Tags for the meme' })
+  @IsOptional()
+  @Type(() => String)
+  tags?: string[];
 }
