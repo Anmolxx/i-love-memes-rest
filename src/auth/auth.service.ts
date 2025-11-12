@@ -194,16 +194,22 @@ export class AuthService {
   }
 
   async register(dto: AuthRegisterLoginDto): Promise<void> {
-    const user = await this.usersService.create({
-      ...dto,
-      email: dto.email,
-      role: {
-        id: RoleEnum.user,
-      },
-      status: {
-        id: StatusEnum.inactive,
-      },
-    });
+    let user: User;
+    try {
+      user = await this.usersService.create({
+        ...dto,
+        email: dto.email,
+        role: {
+          id: RoleEnum.user,
+        },
+        status: {
+          id: StatusEnum.inactive,
+        },
+      });
+    } catch (exception) {
+      console.error('Something went wrong', exception);
+      return;
+    }
 
     const hash = await this.jwtService.signAsync(
       {
