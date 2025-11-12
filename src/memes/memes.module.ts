@@ -4,12 +4,14 @@ import { RelationalTagPersistenceModule } from '../tags/infrastructure/persisten
 import { RelationalMemePersistenceModule } from './infrastructure/persistence/relational/relational-persistence.module';
 import { MemesController } from './memes.controller';
 import { MemesService } from './memes.service';
+import { TagsModule } from '../tags/tags.module';
 
 @Module({
   imports: [
     RelationalMemePersistenceModule,
     FilesModule,
     RelationalTagPersistenceModule,
+    TagsModule,
   ],
   controllers: [MemesController],
   providers: [MemesService],
