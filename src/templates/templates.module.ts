@@ -4,6 +4,7 @@ import { RelationalTemplatePersistenceModule } from './infrastructure/persistenc
 import { RelationalTagPersistenceModule } from '../tags/infrastructure/persistence/relational/relational-persistence.module';
 import { TemplateController } from './templates.controller';
 import { TemplateService } from './templates.service';
+import { TagsModule } from '../tags/tags.module';
 
 const infrastructurePersistenceModule = RelationalTemplatePersistenceModule;
 
@@ -13,6 +14,7 @@ const infrastructurePersistenceModule = RelationalTemplatePersistenceModule;
     infrastructurePersistenceModule,
     FilesModule,
     RelationalTagPersistenceModule,
+    TagsModule,
   ],
   controllers: [TemplateController],
   providers: [TemplateService],
