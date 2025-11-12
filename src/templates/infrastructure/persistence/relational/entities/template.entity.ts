@@ -45,7 +45,11 @@ export class TemplateEntity extends EntityRelationalHelper {
   author: UserEntity;
 
   @ManyToMany(() => TagEntity, { eager: true })
-  @JoinTable({ name: 'template_tags' })
+  @JoinTable({
+    name: 'template_tags',
+    joinColumn: { name: 'template_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
+  })
   tags: TagEntity[];
 
   @CreateDateColumn()

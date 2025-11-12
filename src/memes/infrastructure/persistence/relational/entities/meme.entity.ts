@@ -68,6 +68,10 @@ export class MemeEntity extends EntityRelationalHelper {
   deletedAt: Date;
 
   @ManyToMany(() => TagEntity, { eager: true })
-  @JoinTable({ name: 'meme_tags' })
+  @JoinTable({
+    name: 'meme_tags',
+    joinColumn: { name: 'meme_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
+  })
   tags: TagEntity[];
 }
