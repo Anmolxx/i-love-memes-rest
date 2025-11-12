@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FileType } from '../../files/domain/file';
 import { MemeAudience } from '../memes.enum';
+import { Tag } from '../../tags/domain/tag';
 
 export class MemeDto {
   @ApiProperty({ type: String })
@@ -29,4 +30,11 @@ export class MemeDto {
 
   @ApiProperty()
   deletedAt: Date;
+
+  @ApiProperty({
+    type: [Tag],
+    description: 'Tags associated with the meme',
+    required: false,
+  })
+  tags?: Tag[];
 }

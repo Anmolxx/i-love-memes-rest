@@ -1,3 +1,4 @@
+import { Tag } from 'src/tags/domain/tag';
 import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
 import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
 import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
@@ -35,6 +36,21 @@ export class MemeMapper {
     domain.createdAt = raw.createdAt;
     domain.updatedAt = raw.updatedAt;
     domain.deletedAt = raw.deletedAt;
+
+    if (raw.tags) {
+      domain.tags = raw.tags.map(
+        (tagEntity) =>
+          ({
+            id: tagEntity.id,
+            name: tagEntity.name,
+            slug: tagEntity.slug,
+            category: tagEntity.category,
+            description: tagEntity.description,
+            status: tagEntity.status,
+          }) as Tag,
+      );
+    }
+
     return domain;
   }
 

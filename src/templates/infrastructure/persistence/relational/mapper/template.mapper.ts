@@ -1,3 +1,4 @@
+import { Tag } from 'src/tags/domain/tag';
 import { Template } from '../../../../domain/template';
 import { TemplateEntity } from '../entities/template.entity';
 
@@ -15,6 +16,20 @@ export class TemplateMapper {
         id: raw.author.id,
         email: raw.author.email,
       } as any;
+    }
+
+    if (raw.tags) {
+      domain.tags = raw.tags.map(
+        (tagEntity) =>
+          ({
+            id: tagEntity.id,
+            name: tagEntity.name,
+            slug: tagEntity.slug,
+            category: tagEntity.category,
+            description: tagEntity.description,
+            status: tagEntity.status,
+          }) as Tag,
+      );
     }
 
     domain.createdAt = raw.createdAt;

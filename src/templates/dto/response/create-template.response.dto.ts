@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Tag } from '../../../tags/domain/tag';
 
 export class CreateTemplateResponseDto {
   @ApiProperty({
@@ -68,4 +69,11 @@ export class CreateTemplateResponseDto {
 
   @ApiPropertyOptional({ type: Date })
   deletedAt?: Date | null;
+
+  @ApiProperty({
+    type: [Tag],
+    description: 'Tags associated with the template',
+    required: false,
+  })
+  tags?: Tag[];
 }

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserSummary } from '../../users/domain/user-summary';
+import { Tag } from '../../tags/domain/tag';
 
 export class Template {
   @ApiProperty({
@@ -67,4 +68,11 @@ export class Template {
 
   @ApiPropertyOptional({ type: Date })
   deletedAt?: Date | null;
+
+  @ApiProperty({
+    type: [Tag],
+    description: 'Tags associated with the template',
+    required: false,
+  })
+  tags?: Tag[];
 }

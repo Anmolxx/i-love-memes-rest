@@ -5,6 +5,8 @@ import {
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -15,6 +17,7 @@ import { TemplateEntity } from '../../../../../templates/infrastructure/persiste
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 import { MemeAudience } from '../../../../memes.enum';
+import { TagEntity } from '../../../../../tags/infrastructure/persistence/relational/entities/tag.entity';
 
 @Entity({ name: 'memes' })
 export class MemeEntity extends EntityRelationalHelper {
@@ -63,4 +66,8 @@ export class MemeEntity extends EntityRelationalHelper {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @ManyToMany(() => TagEntity, { eager: true })
+  @JoinTable({ name: 'meme_tags' })
+  tags: TagEntity[];
 }

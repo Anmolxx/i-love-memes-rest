@@ -5,12 +5,15 @@ import {
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
+import { TagEntity } from '../../../../../tags/infrastructure/persistence/relational/entities/tag.entity';
 
 @Entity({
   name: 'template',
@@ -40,6 +43,10 @@ export class TemplateEntity extends EntityRelationalHelper {
   })
   @JoinColumn()
   author: UserEntity;
+
+  @ManyToMany(() => TagEntity, { eager: true })
+  @JoinTable({ name: 'template_tags' })
+  tags: TagEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

@@ -3,6 +3,7 @@ import { Template } from 'src/templates/domain/template';
 import { User } from 'src/users/domain/user';
 import { FileType } from '../../files/domain/file';
 import { MemeAudience } from '../memes.enum';
+import { Tag } from '../../tags/domain/tag';
 
 export class Meme {
   @ApiProperty({
@@ -52,4 +53,11 @@ export class Meme {
 
   @ApiProperty()
   deletedAt: Date;
+
+  @ApiProperty({
+    type: [Tag],
+    description: 'Tags associated with the meme',
+    required: false,
+  })
+  tags?: Tag[];
 }
