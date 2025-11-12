@@ -1,8 +1,9 @@
 import { Tag } from 'src/tags/domain/tag';
+import { User } from 'src/users/domain/user';
 import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
-import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
-import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
-import { Meme } from '../../../../domain/meme';
+import { FileMapper } from 'src/files/infrastructure/persistence/relational/mappers/file.mapper';
+import { TemplateEntity } from 'src/templates/infrastructure/persistence/relational/entities/template.entity';
+import { Meme } from 'src/memes/domain/meme';
 import { MemeEntity } from '../entities/meme.entity';
 
 export class MemeMapper {
@@ -29,7 +30,9 @@ export class MemeMapper {
       domain.author = {
         id: raw.author.id,
         email: raw.author.email,
-      } as any;
+        firstName: raw.author.firstName,
+        lastName: raw.author.lastName,
+      } as User;
     }
 
     domain.audience = raw.audience;
