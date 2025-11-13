@@ -74,6 +74,12 @@ export class InteractionsController {
     type: String,
     description: 'Meme slug or UUID',
   })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'User UUID (optional)',
+    required: false,
+  })
   @ApiOkResponse({ type: InteractionSummaryDto })
   getMemeInteractions(
     @Param('slugOrId') slugOrId: string,
