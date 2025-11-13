@@ -1,4 +1,5 @@
 import { MemeInteraction } from 'src/interactions/domain/meme-interaction';
+import { MemeInteractionSummary } from 'src/interactions/domain/meme-interaction-summary';
 import { InteractionType } from 'src/interactions/interactions.enum';
 import { NullableType } from 'src/utils/types/nullable.type';
 
@@ -33,12 +34,5 @@ export abstract class MemeInteractionRepository {
   abstract getSummary(
     memeId: string,
     userId?: string,
-  ): Promise<{
-    upvoteCount: number;
-    downvoteCount: number;
-    reportCount: number;
-    flagCount: number;
-    netScore: number;
-    userInteraction?: { type: string; createdAt: Date };
-  }>;
+  ): Promise<MemeInteractionSummary>;
 }
