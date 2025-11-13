@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MemeInteraction } from 'src/interactions/domain/meme-interaction';
+import { MemeInteractionSummary } from 'src/interactions/domain/meme-interaction-summary';
 import { MemeInteractionRepository } from 'src/interactions/infrastructure/persistence/meme-interaction.repository';
 import { InteractionType } from 'src/interactions/interactions.enum';
 import { NullableType } from 'src/utils/types/nullable.type';
@@ -96,14 +97,7 @@ export class MemeInteractionRelationalRepository
   async getSummary(
     memeId: string,
     userId?: string,
-  ): Promise<{
-    upvoteCount: number;
-    downvoteCount: number;
-    reportCount: number;
-    flagCount: number;
-    netScore: number;
-    userInteraction?: { type: string; createdAt: Date };
-  }> {
+  ): Promise<MemeInteractionSummary> {
     const upvoteCount = await this.countByMemeAndType(
       memeId,
       InteractionType.UPVOTE,
@@ -123,7 +117,7 @@ export class MemeInteractionRelationalRepository
 
     const netScore = upvoteCount - downvoteCount;
 
-    const summary: any = {
+    const summary: MemeInteractionSummary = {
       upvoteCount,
       downvoteCount,
       reportCount,

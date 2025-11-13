@@ -39,6 +39,37 @@ export class MemeMapper {
       domain.tags = raw.tags.map((t) => TagMapper.toDomain(t));
     }
 
+    // Map computed interaction counts if present on the raw entity (selected via query builder)
+    const upvoteCount = (raw as any)['interaction_upvote_count'];
+    const downvoteCount = (raw as any)['interaction_downvote_count'];
+    const reportCount = (raw as any)['interaction_report_count'];
+    const flagCount = (raw as any)['interaction_flag_count'];
+    const netScore = (raw as any)['interaction_net_score'];
+    const calculated_score = (raw as any)['calculated_score'];
+
+    if (
+      typeof upvoteCount !== 'undefined' ||
+      typeof downvoteCount !== 'undefined' ||
+      typeof reportCount !== 'undefined' ||
+      typeof flagCount !== 'undefined' ||
+      typeof netScore !== 'undefined' ||
+      typeof calculated_score !== 'undefined'
+    ) {
+      const computedNet = Number(upvoteCount ?? 0) - Number(downvoteCount ?? 0);
+      domain.interactionSummary = {
+        upvoteCount: Number(upvoteCount ?? 0),
+        downvoteCount: Number(downvoteCount ?? 0),
+        reportCount: Number(reportCount ?? 0),
+        flagCount: Number(flagCount ?? 0),
+        netScore:
+          typeof netScore !== 'undefined' ? Number(netScore) : computedNet,
+        calculatedScore:
+          typeof calculated_score !== 'undefined'
+            ? Number(calculated_score)
+            : undefined,
+      } as any;
+    }
+
     return domain;
   }
 
