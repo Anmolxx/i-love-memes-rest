@@ -55,10 +55,17 @@ export class MemesRelationalRepository implements MemesRepository {
       paginationOptions.limit,
     );
 
-    // Use getManyAndCount which will execute the query with the computed scores
-    const [entities, total] = await qb.getManyAndCount();
+    // Use getRawAndEntities to get both raw computed columns and entities
+    const { raw, entities } = await qb.getRawAndEntities();
 
-    const items = entities.map((e) => MemeMapper.toDomain(e));
+    // Build separate count query without ordering and computed selects
+    const countQb = this.buildCountQuery(filterOptions, true);
+    const total = await countQb.getCount();
+
+    // Merge computed columns from raw into entities
+    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
 
     const meta = {
       totalItems: total,
@@ -134,12 +141,8 @@ export class MemesRelationalRepository implements MemesRepository {
   ): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
-    qb.leftJoinAndSelect('meme.file', 'file')
-      .leftJoinAndSelect('meme.author', 'author')
-      .leftJoinAndSelect('meme.template', 'template')
-      .where('author.id = :userId', { userId })
-      // keep only non-deleted memes for an author's listing
-      .andWhere('meme.deletedAt IS NULL');
+    // Apply base where for author before applyCommonQueryOptions
+    qb.where('author.id = :userId', { userId });
 
     // Reuse the common query options but don't enforce public audience here
     this.applyCommonQueryOptions(qb, {
@@ -155,10 +158,18 @@ export class MemesRelationalRepository implements MemesRepository {
       effectivePagination.limit,
     );
 
-    // Use getManyAndCount which will execute the query with the computed scores
-    const [entities, total] = await qb.getManyAndCount();
+    // Use getRawAndEntities to get both raw computed columns and entities
+    const { raw, entities } = await qb.getRawAndEntities();
 
-    const items = entities.map((e) => MemeMapper.toDomain(e));
+    // Build separate count query for accurate total
+    const countQb = this.buildCountQuery(filterOptions, false);
+    countQb.andWhere('author.id = :userId', { userId });
+    const total = await countQb.getCount();
+
+    // Merge computed columns from raw into entities
+    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
 
     const meta = {
       totalItems: total,
@@ -171,47 +182,26 @@ export class MemesRelationalRepository implements MemesRepository {
   }
 
   /**
-   * Shared helper that applies joins, filters and sorting to the provided QueryBuilder.
-   * - If enforceAudiencePublic is true, it will add a filter to only include PUBLIC memes.
-   * - It will also apply tag/template filters, search filter and sorting logic.
+   * Apply base joins to query builder
    */
-  private applyCommonQueryOptions(
-    qb: SelectQueryBuilder<MemeEntity>,
-    opts: {
-      filterOptions?: MemeFilterOptionsDto | null;
-      sortOptions?: MemeSortOptionsDto;
-      enforceAudiencePublic?: boolean;
-    },
-  ) {
-    const { filterOptions, sortOptions, enforceAudiencePublic } = opts;
-
-    // Ensure joins are present (if not already joined by caller)
-    // Left joins are idempotent in TypeORM if used consistently
+  private applyBaseJoins(qb: SelectQueryBuilder<MemeEntity>): void {
     qb.leftJoinAndSelect('meme.file', 'file')
       .leftJoinAndSelect('meme.author', 'author')
       .leftJoinAndSelect('meme.tags', 'tags')
       .leftJoinAndSelect('meme.template', 'template');
+  }
 
-    if (isMemeFilterOptionsDto(filterOptions)) {
-      // Join meme_tags for tag filtering
-      if (filterOptions?.tags && filterOptions.tags.length > 0) {
-        qb.andWhere(
-          '(tags.name IN (:...tagIds) OR tags.slug IN (:...tagIds))',
-          {
-            tagIds: filterOptions.tags,
-          },
-        )
-          // When joining tags, duplicates can appear; ensure distinct memes are returned
-          .distinct(true);
-      }
-
-      // Filter by templateIds
-      if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
-        qb.andWhere('meme.template IN (:...templateIds)', {
-          templateIds: filterOptions.templateIds,
-        });
-      }
-    }
+  /**
+   * Apply common filters to query builder (tags, templates, audience, search, deleted)
+   * Uses andWhere() so it works with or without existing where clauses
+   */
+  private applyFilters(
+    qb: SelectQueryBuilder<MemeEntity>,
+    filterOptions?: MemeFilterOptionsDto | null,
+    enforceAudiencePublic?: boolean,
+  ): void {
+    // Always filter out soft-deleted records
+    qb.andWhere('meme.deletedAt IS NULL');
 
     if (enforceAudiencePublic) {
       qb.andWhere('meme.audience = :audience', {
@@ -219,22 +209,68 @@ export class MemesRelationalRepository implements MemesRepository {
       });
     }
 
-    // Exclude soft-deleted
-    qb.andWhere('meme.deletedAt IS NULL');
-
     if (filterOptions?.search) {
       qb.andWhere('meme.title ILIKE :search', {
         search: `%${filterOptions.search}%`,
       });
     }
 
-    // Sorting logic
+    if (isMemeFilterOptionsDto(filterOptions)) {
+      if (filterOptions?.tags && filterOptions.tags.length > 0) {
+        qb.andWhere(
+          '(tags.name IN (:...tagIds) OR tags.slug IN (:...tagIds))',
+          {
+            tagIds: filterOptions.tags,
+          },
+        ).distinct(true);
+      }
+
+      if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
+        qb.andWhere('meme.template IN (:...templateIds)', {
+          templateIds: filterOptions.templateIds,
+        });
+      }
+    }
+  }
+
+  /**
+   * Add interaction count selects to query builder
+   */
+  private addInteractionCountSelects(qb: SelectQueryBuilder<MemeEntity>): void {
+    qb.addSelect(
+      `(SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE')`,
+      'interaction_upvote_count',
+    );
+    qb.addSelect(
+      `(SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'DOWNVOTE')`,
+      'interaction_downvote_count',
+    );
+    qb.addSelect(
+      `(SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'REPORT')`,
+      'interaction_report_count',
+    );
+    qb.addSelect(
+      `(SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'FLAG')`,
+      'interaction_flag_count',
+    );
+    qb.addSelect(
+      `( (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE') - (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'DOWNVOTE') )`,
+      'interaction_net_score',
+    );
+  }
+
+  /**
+   * Apply sorting logic to query builder
+   */
+  private applySorting(
+    qb: SelectQueryBuilder<MemeEntity>,
+    sortOptions?: MemeSortOptionsDto,
+  ): void {
     if (
       sortOptions?.orderBy === MemeSortField.UPVOTES ||
       sortOptions?.orderBy === MemeSortField.DOWNVOTES ||
       sortOptions?.orderBy === MemeSortField.REPORTS
     ) {
-      // Subquery for interaction counts
       let interactionType = '';
       if (sortOptions.orderBy === MemeSortField.UPVOTES)
         interactionType = 'UPVOTE';
@@ -252,19 +288,13 @@ export class MemesRelationalRepository implements MemesRepository {
       sortOptions?.orderBy === MemeSortField.TRENDING ||
       sortOptions?.orderBy === MemeSortField.SCORE
     ) {
-      // Sophisticated scoring with weighted interactions and time decay
       const isTrending = sortOptions.orderBy === MemeSortField.TRENDING;
-
-      // Choose configuration based on sort type
       const cfg = isTrending
         ? TRENDING_MEME_SCORING_CONFIG
         : DEFAULT_MEME_SCORING_CONFIG;
 
-      // Calculate sophisticated score with SQL
-      // Formula: (weighted_interactions * time_decay_factor * recency_bonus), floored at minScore
       const rawScore = `
         (
-          -- Base interaction score
           (
             (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi 
              WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE') * ${cfg.upvoteWeight}
@@ -279,13 +309,11 @@ export class MemesRelationalRepository implements MemesRepository {
              WHERE mi.meme_id = meme.id AND mi.type = 'FLAG') * ${cfg.flagWeight}
           )
           *
-          -- Time decay factor (exponential decay based on age)
           POWER(
             0.5,
             GREATEST(0, EXTRACT(EPOCH FROM (NOW() - meme."createdAt")) / 3600 - ${cfg.ageThresholdHours}) / ${cfg.ageThresholdHours} * ${cfg.timeDecayFactor}
           )
           *
-          -- Recency bonus for very fresh content
           CASE
             WHEN EXTRACT(EPOCH FROM (NOW() - meme."createdAt")) / 3600 < ${cfg.recencyBonusHours}
             THEN ${cfg.recencyBonusMultiplier}
@@ -294,18 +322,70 @@ export class MemesRelationalRepository implements MemesRepository {
         )
       `;
 
-      // Apply minimum score floor
       const scoreFormula = `GREATEST(${rawScore}, ${cfg.minScore})`;
-
-      // Use a snake_case alias to avoid case sensitivity issues
       qb.addSelect(scoreFormula, 'calculated_score');
-
-      // Order by the safe alias (lowercase, unquoted)
       qb.orderBy('calculated_score', sortOptions.order ?? 'DESC');
     } else if (sortOptions?.orderBy) {
       qb.addOrderBy(`meme.${sortOptions.orderBy}`, sortOptions.order ?? 'DESC');
     } else {
       qb.addOrderBy('meme.createdAt', 'DESC');
     }
+  }
+
+  /**
+   * Build a count query with filters applied
+   * Initializes with a base where condition to ensure proper query building
+   */
+  private buildCountQuery(
+    filterOptions?: MemeFilterOptionsDto | null,
+    enforceAudiencePublic?: boolean,
+  ): SelectQueryBuilder<MemeEntity> {
+    const countQb = this.memesRepository.createQueryBuilder('meme');
+    // Initialize with a base where to allow andWhere in filters
+    countQb.where('1=1');
+    this.applyBaseJoins(countQb);
+    this.applyFilters(countQb, filterOptions, enforceAudiencePublic);
+    return countQb;
+  }
+
+  /**
+   * Shared helper that applies joins, filters and sorting to the provided QueryBuilder.
+   */
+  private applyCommonQueryOptions(
+    qb: SelectQueryBuilder<MemeEntity>,
+    opts: {
+      filterOptions?: MemeFilterOptionsDto | null;
+      sortOptions?: MemeSortOptionsDto;
+      enforceAudiencePublic?: boolean;
+    },
+  ) {
+    const { filterOptions, sortOptions, enforceAudiencePublic } = opts;
+
+    this.applyBaseJoins(qb);
+    this.addInteractionCountSelects(qb);
+    this.applyFilters(qb, filterOptions, enforceAudiencePublic);
+    this.applySorting(qb, sortOptions);
+  }
+
+  /**
+   * Merge raw computed columns from query results into entity objects
+   */
+  private mergeRawComputedColumns<T>(entities: T[], raw: any[]): T[] {
+    const computedColumns = [
+      'interaction_upvote_count',
+      'interaction_downvote_count',
+      'interaction_report_count',
+      'interaction_flag_count',
+      'interaction_net_score',
+      'calculated_score',
+    ];
+
+    return entities.map((entity, idx) => {
+      const row = raw[idx] ?? {};
+      computedColumns.forEach((key) => {
+        (entity as any)[key] = row[key];
+      });
+      return entity;
+    });
   }
 }

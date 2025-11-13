@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { InteractionSummaryDto } from 'src/interactions/dto/interaction-summary.dto';
 import { Template } from 'src/templates/domain/template';
 import { User } from 'src/users/domain/user';
 import { FileType } from '../../files/domain/file';
-import { MemeAudience } from '../memes.enum';
 import { Tag } from '../../tags/domain/tag';
+import { MemeAudience } from '../memes.enum';
 
 export class Meme {
   @ApiProperty({
@@ -60,4 +61,7 @@ export class Meme {
     required: false,
   })
   tags?: Tag[];
+
+  @ApiProperty({ type: () => InteractionSummaryDto, required: false })
+  interactionSummary?: InteractionSummaryDto;
 }
