@@ -183,16 +183,18 @@ export class MemesRelationalRepository implements MemesRepository {
     // Left joins are idempotent in TypeORM if used consistently
     qb.leftJoinAndSelect('meme.file', 'file')
       .leftJoinAndSelect('meme.author', 'author')
+      .leftJoinAndSelect('meme.tags', 'tags')
       .leftJoinAndSelect('meme.template', 'template');
 
     if (isMemeFilterOptionsDto(filterOptions)) {
       // Join meme_tags for tag filtering
       if (filterOptions?.tags && filterOptions.tags.length > 0) {
-        qb.leftJoin('meme_tags', 'meme_tag', 'meme_tag.meme_id = meme.id')
-          .leftJoin('tags', 'tag', 'tag.id = meme_tag.tag_id')
-          .andWhere('(tag.name IN (:...tagIds) OR tag.slug IN (:...tagIds))', {
+        qb.andWhere(
+          '(tags.name IN (:...tagIds) OR tags.slug IN (:...tagIds))',
+          {
             tagIds: filterOptions.tags,
-          })
+          },
+        )
           // When joining tags, duplicates can appear; ensure distinct memes are returned
           .distinct(true);
       }

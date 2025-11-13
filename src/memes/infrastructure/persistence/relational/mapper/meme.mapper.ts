@@ -1,9 +1,9 @@
-import { Tag } from 'src/tags/domain/tag';
-import { User } from 'src/users/domain/user';
-import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
 import { FileMapper } from 'src/files/infrastructure/persistence/relational/mappers/file.mapper';
-import { TemplateEntity } from 'src/templates/infrastructure/persistence/relational/entities/template.entity';
 import { Meme } from 'src/memes/domain/meme';
+import { TagMapper } from 'src/tags/infrastructure/persistence/relational/mapper/tag.mapper';
+import { TemplateEntity } from 'src/templates/infrastructure/persistence/relational/entities/template.entity';
+import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
+import { UserMapper } from 'src/users/infrastructure/persistence/relational/mappers/user.mapper';
 import { MemeEntity } from '../entities/meme.entity';
 
 export class MemeMapper {
@@ -27,12 +27,7 @@ export class MemeMapper {
     }
 
     if (raw.author) {
-      domain.author = {
-        id: raw.author.id,
-        email: raw.author.email,
-        firstName: raw.author.firstName,
-        lastName: raw.author.lastName,
-      } as User;
+      domain.author = UserMapper.toDomain(raw.author);
     }
 
     domain.audience = raw.audience;
@@ -41,17 +36,7 @@ export class MemeMapper {
     domain.deletedAt = raw.deletedAt;
 
     if (raw.tags) {
-      domain.tags = raw.tags.map(
-        (tagEntity) =>
-          ({
-            id: tagEntity.id,
-            name: tagEntity.name,
-            slug: tagEntity.slug,
-            category: tagEntity.category,
-            description: tagEntity.description,
-            status: tagEntity.status,
-          }) as Tag,
-      );
+      domain.tags = raw.tags.map((t) => TagMapper.toDomain(t));
     }
 
     return domain;
