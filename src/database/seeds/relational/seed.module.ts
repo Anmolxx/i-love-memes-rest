@@ -6,12 +6,15 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import appConfig from '../../../config/app.config';
 import databaseConfig from '../../config/database.config';
 import { TypeOrmConfigService } from '../../typeorm-config.service';
+
+import { FileSeedModule } from './file/file-seed.module';
 import { RoleSeedModule } from './role/role-seed.module';
 import { StatusSeedModule } from './status/status-seed.module';
 import { UserSeedModule } from './user/user-seed.module';
 
 @Module({
   imports: [
+    FileSeedModule,
     RoleSeedModule,
     StatusSeedModule,
     UserSeedModule,
