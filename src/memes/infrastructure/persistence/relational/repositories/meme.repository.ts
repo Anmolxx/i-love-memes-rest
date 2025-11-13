@@ -6,6 +6,10 @@ import {
   MemeSortField,
   MemeSortOptionsDto,
 } from 'src/memes/dto/meme-filter-options.dto';
+import {
+  DEFAULT_MEME_SCORING_CONFIG,
+  TRENDING_MEME_SCORING_CONFIG,
+} from 'src/memes/meme-scoring.config';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
 import { Meme } from '../../../../domain/meme';
@@ -40,7 +44,7 @@ export class MemesRelationalRepository implements MemesRepository {
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
-    // Use the shared helper and enforce public audience for the general listing
+    // Apply filters + sorting for data query
     this.applyCommonQueryOptions(qb, {
       filterOptions,
       sortOptions,
@@ -51,6 +55,7 @@ export class MemesRelationalRepository implements MemesRepository {
       paginationOptions.limit,
     );
 
+    // Use getManyAndCount which will execute the query with the computed scores
     const [entities, total] = await qb.getManyAndCount();
 
     const items = entities.map((e) => MemeMapper.toDomain(e));
@@ -150,6 +155,7 @@ export class MemesRelationalRepository implements MemesRepository {
       effectivePagination.limit,
     );
 
+    // Use getManyAndCount which will execute the query with the computed scores
     const [entities, total] = await qb.getManyAndCount();
 
     const items = entities.map((e) => MemeMapper.toDomain(e));
@@ -213,6 +219,9 @@ export class MemesRelationalRepository implements MemesRepository {
       });
     }
 
+    // Exclude soft-deleted
+    qb.andWhere('meme.deletedAt IS NULL');
+
     if (filterOptions?.search) {
       qb.andWhere('meme.title ILIKE :search', {
         search: `%${filterOptions.search}%`,
@@ -235,10 +244,64 @@ export class MemesRelationalRepository implements MemesRepository {
         interactionType = 'REPORT';
       qb.addSelect(
         `(SELECT COUNT(*) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionType)`,
-        'interactionCount',
+        'interaction_count',
       )
         .setParameter('interactionType', interactionType)
-        .orderBy('interactionCount', sortOptions.order ?? 'DESC');
+        .orderBy('interaction_count', sortOptions.order ?? 'DESC');
+    } else if (
+      sortOptions?.orderBy === MemeSortField.TRENDING ||
+      sortOptions?.orderBy === MemeSortField.SCORE
+    ) {
+      // Sophisticated scoring with weighted interactions and time decay
+      const isTrending = sortOptions.orderBy === MemeSortField.TRENDING;
+
+      // Choose configuration based on sort type
+      const cfg = isTrending
+        ? TRENDING_MEME_SCORING_CONFIG
+        : DEFAULT_MEME_SCORING_CONFIG;
+
+      // Calculate sophisticated score with SQL
+      // Formula: (weighted_interactions * time_decay_factor * recency_bonus), floored at minScore
+      const rawScore = `
+        (
+          -- Base interaction score
+          (
+            (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi 
+             WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE') * ${cfg.upvoteWeight}
+            +
+            (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi 
+             WHERE mi.meme_id = meme.id AND mi.type = 'DOWNVOTE') * ${cfg.downvoteWeight}
+            +
+            (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi 
+             WHERE mi.meme_id = meme.id AND mi.type = 'REPORT') * ${cfg.reportWeight}
+            +
+            (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi 
+             WHERE mi.meme_id = meme.id AND mi.type = 'FLAG') * ${cfg.flagWeight}
+          )
+          *
+          -- Time decay factor (exponential decay based on age)
+          POWER(
+            0.5,
+            GREATEST(0, EXTRACT(EPOCH FROM (NOW() - meme."createdAt")) / 3600 - ${cfg.ageThresholdHours}) / ${cfg.ageThresholdHours} * ${cfg.timeDecayFactor}
+          )
+          *
+          -- Recency bonus for very fresh content
+          CASE
+            WHEN EXTRACT(EPOCH FROM (NOW() - meme."createdAt")) / 3600 < ${cfg.recencyBonusHours}
+            THEN ${cfg.recencyBonusMultiplier}
+            ELSE 1.0
+          END
+        )
+      `;
+
+      // Apply minimum score floor
+      const scoreFormula = `GREATEST(${rawScore}, ${cfg.minScore})`;
+
+      // Use a snake_case alias to avoid case sensitivity issues
+      qb.addSelect(scoreFormula, 'calculated_score');
+
+      // Order by the safe alias (lowercase, unquoted)
+      qb.orderBy('calculated_score', sortOptions.order ?? 'DESC');
     } else if (sortOptions?.orderBy) {
       qb.addOrderBy(`meme.${sortOptions.orderBy}`, sortOptions.order ?? 'DESC');
     } else {

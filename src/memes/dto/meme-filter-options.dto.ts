@@ -9,6 +9,8 @@ export enum MemeSortField {
   UPVOTES = 'upvotes',
   DOWNVOTES = 'downvotes',
   REPORTS = 'reports',
+  TRENDING = 'trending',
+  SCORE = 'score',
 }
 
 export class MemeFilterOptionsDto {

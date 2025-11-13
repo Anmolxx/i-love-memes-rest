@@ -94,6 +94,48 @@ export class MemesController {
     return createPaginatedResponse('Memes fetched successfully', items, meta);
   }
 
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
+  @SerializeOptions({ groups: ['admin'] })
+  @Get('top')
+  @HttpCode(HttpStatus.OK)
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  async findTopMemes(
+    @Query() filterOptions: MemeFilterOptionsDto,
+    @Query() sortOptions: MemeSortOptionsDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+
+    const { items, meta } = await this.memesService.findTopMemes({
+      filterOptions,
+      sortOptions,
+      paginationOptions: {
+        page: safePage,
+        limit: safeLimit,
+      } as IPaginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'Top memes fetched successfully',
+      items,
+      meta,
+    );
+  }
+
   @ApiOkResponse({ type: [Meme] })
   @ApiBearerAuth()
   @SerializeOptions({ groups: ['admin'] })

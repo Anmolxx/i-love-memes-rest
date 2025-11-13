@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   MemeFilterOptionsDto,
+  MemeSortField,
   MemeSortOptionsDto,
 } from 'src/memes/dto/meme-filter-options.dto';
 import { TagRepository } from 'src/tags/infrastructure/persistence/tag.repository';
@@ -286,6 +287,29 @@ export class MemesService {
       filterOptions,
       sortOptions,
       paginationOptions: effectivePagination,
+    });
+  }
+
+  async findTopMemes({
+    filterOptions,
+    sortOptions,
+    paginationOptions,
+  }: {
+    filterOptions?: MemeFilterOptionsDto | null;
+    sortOptions?: MemeSortOptionsDto;
+    paginationOptions: IPaginationOptions;
+  }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
+    // Default to sophisticated TRENDING sort if no sort option is provided
+    // TRENDING uses weighted interactions (upvotes, downvotes, reports, flags)
+    // with time decay and recency bonus for a dynamic, engaging feed
+    const effectiveSortOptions = sortOptions?.orderBy
+      ? sortOptions
+      : { orderBy: MemeSortField.TRENDING, order: 'DESC' as const };
+
+    return this.memesRepository.findManyWithPagination({
+      filterOptions,
+      sortOptions: effectiveSortOptions,
+      paginationOptions,
     });
   }
 }
