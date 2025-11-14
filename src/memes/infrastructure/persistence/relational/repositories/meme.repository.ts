@@ -7,7 +7,9 @@ import {
   MemeSortOptionsDto,
 } from 'src/memes/dto/meme-filter-options.dto';
 import {
+  ALLTIME_MEME_SCORING_CONFIG,
   DEFAULT_MEME_SCORING_CONFIG,
+  MemeScoringConfig,
   TRENDING_MEME_SCORING_CONFIG,
 } from 'src/memes/meme-scoring.config';
 import { Repository, SelectQueryBuilder } from 'typeorm';
@@ -288,10 +290,21 @@ export class MemesRelationalRepository implements MemesRepository {
       sortOptions?.orderBy === MemeSortField.TRENDING ||
       sortOptions?.orderBy === MemeSortField.SCORE
     ) {
-      const isTrending = sortOptions.orderBy === MemeSortField.TRENDING;
-      const cfg = isTrending
-        ? TRENDING_MEME_SCORING_CONFIG
-        : DEFAULT_MEME_SCORING_CONFIG;
+      let cfg: MemeScoringConfig;
+
+      switch (sortOptions.orderBy) {
+        case MemeSortField.TRENDING:
+          // Use the respective scoring configuration
+          cfg = TRENDING_MEME_SCORING_CONFIG;
+          break;
+        case MemeSortField.SCORE:
+          cfg = ALLTIME_MEME_SCORING_CONFIG;
+          break;
+
+        default:
+          cfg = DEFAULT_MEME_SCORING_CONFIG;
+          break;
+      }
 
       const rawScore = `
         (
