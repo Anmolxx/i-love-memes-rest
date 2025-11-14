@@ -46,6 +46,10 @@ export class MemeMapper {
     const flagCount = (raw as any)['interaction_flag_count'];
     const netScore = (raw as any)['interaction_net_score'];
     const calculated_score = (raw as any)['calculated_score'];
+    const userInteractionType = (raw as any)['user_interaction_type'];
+    const userInteractionCreatedAt = (raw as any)[
+      'user_interaction_created_at'
+    ];
 
     if (
       typeof upvoteCount !== 'undefined' ||
@@ -68,6 +72,18 @@ export class MemeMapper {
             ? Number(calculated_score)
             : undefined,
       } as any;
+
+      // Add user interaction if present
+      if (
+        userInteractionType &&
+        userInteractionCreatedAt &&
+        domain.interactionSummary
+      ) {
+        domain.interactionSummary.userInteraction = {
+          type: userInteractionType,
+          createdAt: userInteractionCreatedAt,
+        };
+      }
     }
 
     return domain;

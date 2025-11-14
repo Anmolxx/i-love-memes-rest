@@ -14,10 +14,12 @@ export abstract class MemesRepository {
     filterOptions,
     sortOptions,
     paginationOptions,
+    currentUserId,
   }: {
     filterOptions?: MemeFilterOptionsDto | null;
     sortOptions?: MemeSortOptionsDto;
     paginationOptions: IPaginationOptions;
+    currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
   abstract findById(id: Meme['id']): Promise<NullableType<Meme>>;
   abstract findBySlug(slug: string): Promise<NullableType<Meme>>;
@@ -31,6 +33,7 @@ export abstract class MemesRepository {
       filterOptions?: MemeFilterOptionsDto | null;
       sortOptions?: MemeSortOptionsDto;
       paginationOptions: IPaginationOptions;
+      currentUserId?: string;
     },
   ): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
 }

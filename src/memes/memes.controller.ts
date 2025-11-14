@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { API_PAGE_LIMIT } from '../constants/common.constant';
 import { User } from '../users/domain/user';
 import { createPaginatedResponse } from '../utils/base-response';
@@ -70,9 +71,11 @@ export class MemesController {
     type: Number,
     description: 'Number of items per page',
   })
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(
+    @CurrentUser() user: User | null,
     @Query() filterOptions: MemeFilterOptionsDto,
     @Query() sortOptions: MemeSortOptionsDto,
     @Query('page') page?: number,
@@ -89,6 +92,7 @@ export class MemesController {
         page: safePage,
         limit: safeLimit,
       } as IPaginationOptions,
+      currentUserId: user?.id,
     });
 
     return createPaginatedResponse('Memes fetched successfully', items, meta);
@@ -96,6 +100,7 @@ export class MemesController {
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
   @SerializeOptions({ groups: ['admin'] })
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('top')
   @HttpCode(HttpStatus.OK)
   @ApiQuery({
@@ -111,6 +116,7 @@ export class MemesController {
     description: 'Number of items per page',
   })
   async findTopMemes(
+    @CurrentUser() user: User | null,
     @Query() filterOptions: MemeFilterOptionsDto,
     @Query() sortOptions: MemeSortOptionsDto,
     @Query('page') page?: number,
@@ -127,6 +133,7 @@ export class MemesController {
         page: safePage,
         limit: safeLimit,
       } as IPaginationOptions,
+      currentUserId: user?.id,
     });
 
     return createPaginatedResponse(

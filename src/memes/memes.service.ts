@@ -118,15 +118,18 @@ export class MemesService {
     filterOptions,
     sortOptions,
     paginationOptions,
+    currentUserId,
   }: {
     filterOptions?: MemeFilterOptionsDto | null;
     sortOptions?: MemeSortOptionsDto;
     paginationOptions: IPaginationOptions;
+    currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     return this.memesRepository.findManyWithPagination({
       filterOptions,
       sortOptions,
       paginationOptions,
+      currentUserId,
     });
   }
 
@@ -287,6 +290,7 @@ export class MemesService {
       filterOptions,
       sortOptions,
       paginationOptions: effectivePagination,
+      currentUserId: user.id,
     });
   }
 
@@ -294,10 +298,12 @@ export class MemesService {
     filterOptions,
     sortOptions,
     paginationOptions,
+    currentUserId,
   }: {
     filterOptions?: MemeFilterOptionsDto | null;
     sortOptions?: MemeSortOptionsDto;
     paginationOptions: IPaginationOptions;
+    currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     // Default to sophisticated TRENDING sort if no sort option is provided
     // TRENDING uses weighted interactions (upvotes, downvotes, reports, flags)
@@ -310,6 +316,7 @@ export class MemesService {
       filterOptions,
       sortOptions: effectiveSortOptions,
       paginationOptions,
+      currentUserId,
     });
   }
 }

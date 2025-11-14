@@ -39,10 +39,12 @@ export class MemesRelationalRepository implements MemesRepository {
     filterOptions,
     sortOptions,
     paginationOptions,
+    currentUserId,
   }: {
     filterOptions?: MemeFilterOptionsDto | null;
     sortOptions?: MemeSortOptionsDto;
     paginationOptions: { page: number; limit: number };
+    currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
@@ -51,6 +53,7 @@ export class MemesRelationalRepository implements MemesRepository {
       filterOptions,
       sortOptions,
       enforceAudiencePublic: true,
+      currentUserId,
     });
 
     qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
@@ -135,10 +138,12 @@ export class MemesRelationalRepository implements MemesRepository {
       filterOptions,
       sortOptions,
       paginationOptions,
+      currentUserId,
     }: {
       filterOptions?: MemeFilterOptionsDto | null;
       sortOptions?: MemeSortOptionsDto;
       paginationOptions: { page: number; limit: number };
+      currentUserId?: string;
     } = { paginationOptions: { page: 1, limit: 10 } },
   ): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
@@ -151,6 +156,7 @@ export class MemesRelationalRepository implements MemesRepository {
       filterOptions,
       sortOptions,
       enforceAudiencePublic: false,
+      currentUserId,
     });
 
     // Ensure default pagination options if caller didn't provide any
@@ -238,7 +244,10 @@ export class MemesRelationalRepository implements MemesRepository {
   /**
    * Add interaction count selects to query builder
    */
-  private addInteractionCountSelects(qb: SelectQueryBuilder<MemeEntity>): void {
+  private addInteractionCountSelects(
+    qb: SelectQueryBuilder<MemeEntity>,
+    currentUserId?: string,
+  ): void {
     qb.addSelect(
       `(SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE')`,
       'interaction_upvote_count',
@@ -259,6 +268,19 @@ export class MemesRelationalRepository implements MemesRepository {
       `( (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE') - (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'DOWNVOTE') )`,
       'interaction_net_score',
     );
+
+    // Add user-specific interaction data if currentUserId is provided
+    if (currentUserId) {
+      qb.addSelect(
+        `(SELECT mi.type FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId ORDER BY mi."createdAt" DESC LIMIT 1)`,
+        'user_interaction_type',
+      );
+      qb.addSelect(
+        `(SELECT mi."createdAt" FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId ORDER BY mi."createdAt" DESC LIMIT 1)`,
+        'user_interaction_created_at',
+      );
+      qb.setParameter('currentUserId', currentUserId);
+    }
   }
 
   /**
@@ -370,12 +392,14 @@ export class MemesRelationalRepository implements MemesRepository {
       filterOptions?: MemeFilterOptionsDto | null;
       sortOptions?: MemeSortOptionsDto;
       enforceAudiencePublic?: boolean;
+      currentUserId?: string;
     },
   ) {
-    const { filterOptions, sortOptions, enforceAudiencePublic } = opts;
+    const { filterOptions, sortOptions, enforceAudiencePublic, currentUserId } =
+      opts;
 
     this.applyBaseJoins(qb);
-    this.addInteractionCountSelects(qb);
+    this.addInteractionCountSelects(qb, currentUserId);
     this.applyFilters(qb, filterOptions, enforceAudiencePublic);
     this.applySorting(qb, sortOptions);
   }
@@ -391,6 +415,8 @@ export class MemesRelationalRepository implements MemesRepository {
       'interaction_flag_count',
       'interaction_net_score',
       'calculated_score',
+      'user_interaction_type',
+      'user_interaction_created_at',
     ];
 
     return entities.map((entity, idx) => {
