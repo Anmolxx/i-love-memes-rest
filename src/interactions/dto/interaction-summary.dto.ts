@@ -1,4 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ReportReason } from 'src/interactions/interactions.enum';
+
+export class UserInteractionDto {
+  @ApiProperty({
+    example: 'UPVOTE',
+    enum: ['UPVOTE', 'DOWNVOTE', 'REPORT', 'FLAG'],
+  })
+  type: string;
+
+  @ApiProperty({ example: '2025-11-14T12:30:00.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: 'Inappropriate content', required: false })
+  reason?: ReportReason;
+
+  @ApiProperty({ example: 'Spam content', required: false })
+  note?: string;
+}
 
 export class InteractionSummaryDto {
   @ApiProperty({ example: 150 })
@@ -16,9 +34,10 @@ export class InteractionSummaryDto {
   @ApiProperty({ example: 140 })
   netScore: number;
 
-  @ApiProperty({ required: false })
-  userInteraction?: {
-    type: string;
-    createdAt: Date;
-  };
+  @ApiProperty({
+    type: [UserInteractionDto],
+    required: false,
+    description: 'User-specific interactions for this meme',
+  })
+  userInteractions?: UserInteractionDto[];
 }

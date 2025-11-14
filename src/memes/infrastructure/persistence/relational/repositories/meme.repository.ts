@@ -272,12 +272,14 @@ export class MemesRelationalRepository implements MemesRepository {
     // Add user-specific interaction data if currentUserId is provided
     if (currentUserId) {
       qb.addSelect(
-        `(SELECT mi.type FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId ORDER BY mi."createdAt" DESC LIMIT 1)`,
-        'user_interaction_type',
-      );
-      qb.addSelect(
-        `(SELECT mi."createdAt" FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId ORDER BY mi."createdAt" DESC LIMIT 1)`,
-        'user_interaction_created_at',
+        `(SELECT COALESCE(
+          json_agg(
+            json_build_object('type', mi.type, 'createdAt', mi."createdAt", 'reason', mi.reason, 'note', mi.note)
+            ORDER BY mi."createdAt" DESC
+          ),
+          '[]'::json
+        ) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId)`,
+        'user_interactions',
       );
       qb.setParameter('currentUserId', currentUserId);
     }
@@ -415,8 +417,7 @@ export class MemesRelationalRepository implements MemesRepository {
       'interaction_flag_count',
       'interaction_net_score',
       'calculated_score',
-      'user_interaction_type',
-      'user_interaction_created_at',
+      'user_interactions',
     ];
 
     return entities.map((entity, idx) => {

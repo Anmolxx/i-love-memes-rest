@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MemeInteraction } from 'src/interactions/domain/meme-interaction';
-import { InteractionSummaryDto } from 'src/interactions/dto/interaction-summary.dto';
+import {
+  InteractionSummaryDto,
+  UserInteractionDto,
+} from 'src/interactions/dto/interaction-summary.dto';
 import { MemeInteractionRepository } from 'src/interactions/infrastructure/persistence/meme-interaction.repository';
 import { InteractionType } from 'src/interactions/interactions.enum';
 import { NullableType } from 'src/utils/types/nullable.type';
@@ -135,10 +138,15 @@ export class MemeInteractionRelationalRepository
       });
 
       if (userInteractions.length > 0) {
-        summary.userInteraction = {
-          type: userInteractions[0].type,
-          createdAt: userInteractions[0].createdAt,
-        };
+        summary.userInteractions = userInteractions.map(
+          (interaction) =>
+            ({
+              type: interaction.type,
+              createdAt: interaction.createdAt,
+              reason: interaction.reason,
+              note: interaction.note,
+            }) as UserInteractionDto,
+        );
       }
     }
 

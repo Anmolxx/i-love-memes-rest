@@ -46,10 +46,7 @@ export class MemeMapper {
     const flagCount = (raw as any)['interaction_flag_count'];
     const netScore = (raw as any)['interaction_net_score'];
     const calculated_score = (raw as any)['calculated_score'];
-    const userInteractionType = (raw as any)['user_interaction_type'];
-    const userInteractionCreatedAt = (raw as any)[
-      'user_interaction_created_at'
-    ];
+    const userInteractions = (raw as any)['user_interactions'];
 
     if (
       typeof upvoteCount !== 'undefined' ||
@@ -73,16 +70,21 @@ export class MemeMapper {
             : undefined,
       } as any;
 
-      // Add user interaction if present
+      // Add user interactions array if present and not empty
       if (
-        userInteractionType &&
-        userInteractionCreatedAt &&
-        domain.interactionSummary
+        userInteractions &&
+        domain.interactionSummary &&
+        Array.isArray(userInteractions) &&
+        userInteractions.length > 0
       ) {
-        domain.interactionSummary.userInteraction = {
-          type: userInteractionType,
-          createdAt: userInteractionCreatedAt,
-        };
+        domain.interactionSummary.userInteractions = userInteractions.map(
+          (interaction: any) => ({
+            type: interaction.type,
+            createdAt: new Date(interaction.createdAt),
+            reason: interaction.reason,
+            note: interaction.note,
+          }),
+        );
       }
     }
 
