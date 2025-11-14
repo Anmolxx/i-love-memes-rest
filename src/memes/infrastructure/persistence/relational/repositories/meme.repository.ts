@@ -82,17 +82,50 @@ export class MemesRelationalRepository implements MemesRepository {
     return { items, meta };
   }
 
-  async findById(id: Meme['id']) {
-    const entity = await this.memesRepository.findOne({ where: { id } });
-    return entity ? MemeMapper.toDomain(entity) : null;
+  async findById(id: Meme['id'], currentUserId?: string) {
+    return this.findOneWithInteractions({ id }, currentUserId);
   }
 
-  async findBySlug(slug: string) {
-    const entity = await this.memesRepository.findOne({
-      where: { slug },
-      withDeleted: true,
-    });
-    return entity ? MemeMapper.toDomain(entity) : null;
+  async findBySlug(slug: string, currentUserId?: string) {
+    return this.findOneWithInteractions({ slug }, currentUserId, true);
+  }
+
+  /**
+   * Find a single meme with interaction statistics and user-specific interactions
+   */
+  private async findOneWithInteractions(
+    where: { id?: string; slug?: string },
+    currentUserId?: string,
+    withDeleted = false,
+  ): Promise<Meme | null> {
+    const qb = this.memesRepository.createQueryBuilder('meme');
+
+    // Apply where condition
+    if (where.id) {
+      qb.where('meme.id = :id', { id: where.id });
+    } else if (where.slug) {
+      qb.where('meme.slug = :slug', { slug: where.slug });
+    }
+
+    // Include soft-deleted if requested
+    if (withDeleted) {
+      qb.withDeleted();
+    }
+
+    // Apply base joins and interaction selects
+    this.applyBaseJoins(qb);
+    this.addInteractionCountSelects(qb, currentUserId);
+
+    // Get raw and entity
+    const { raw, entities } = await qb.getRawAndEntities();
+
+    if (entities.length === 0) {
+      return null;
+    }
+
+    // Merge computed columns
+    const mergedEntity = this.mergeRawComputedColumns(entities, raw)[0];
+    return MemeMapper.toDomain(mergedEntity);
   }
 
   async findByTitle(title: string) {

@@ -189,6 +189,7 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: Meme })
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':slugOrId')
   @HttpCode(HttpStatus.OK)
   @ApiParam({
@@ -197,8 +198,11 @@ export class MemesController {
     required: true,
     description: 'Meme slug or ID',
   })
-  async findOne(@Param('slugOrId') slugOrId: string) {
-    const meme = await this.memesService.findOne(slugOrId);
+  async findOne(
+    @CurrentUser() user: User | null,
+    @Param('slugOrId') slugOrId: string,
+  ) {
+    const meme = await this.memesService.findOne(slugOrId, user?.id);
 
     return {
       success: true,

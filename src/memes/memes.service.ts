@@ -111,7 +111,13 @@ export class MemesService {
         await this.tagRepository.linkTagToMeme(createdMeme.id, tag.id);
       }
     }
-    return createdMeme;
+
+    // Refetch with interaction stats for consistent response format
+    const memeWithStats = await this.memesRepository.findById(
+      createdMeme.id,
+      user.id,
+    );
+    return memeWithStats || createdMeme;
   }
 
   findManyWithPagination({
@@ -133,17 +139,17 @@ export class MemesService {
     });
   }
 
-  findById(id: Meme['id']): Promise<Meme | null> {
-    return this.memesRepository.findById(id);
+  findById(id: Meme['id'], currentUserId?: string): Promise<Meme | null> {
+    return this.memesRepository.findById(id, currentUserId);
   }
 
-  async findOne(slugOrId: string): Promise<Meme> {
+  async findOne(slugOrId: string, currentUserId?: string): Promise<Meme> {
     // Try to find by slug first (more user-friendly)
-    let meme = await this.memesRepository.findBySlug(slugOrId);
+    let meme = await this.memesRepository.findBySlug(slugOrId, currentUserId);
 
     // If not found by slug, try by ID
     if (!meme && isUUID(slugOrId)) {
-      meme = await this.memesRepository.findById(slugOrId);
+      meme = await this.memesRepository.findById(slugOrId, currentUserId);
     }
 
     if (!meme) {
@@ -240,7 +246,13 @@ export class MemesService {
         }
       }
     }
-    return updatedMeme;
+
+    // Refetch with interaction stats for consistent response format
+    const memeWithStats = await this.memesRepository.findById(
+      updatedMeme.id,
+      user.id,
+    );
+    return memeWithStats || updatedMeme;
   }
 
   async remove(slugOrId: string, user: User): Promise<void> {

@@ -21,8 +21,14 @@ export abstract class MemesRepository {
     paginationOptions: IPaginationOptions;
     currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
-  abstract findById(id: Meme['id']): Promise<NullableType<Meme>>;
-  abstract findBySlug(slug: string): Promise<NullableType<Meme>>;
+  abstract findById(
+    id: Meme['id'],
+    currentUserId?: string,
+  ): Promise<NullableType<Meme>>;
+  abstract findBySlug(
+    slug: string,
+    currentUserId?: string,
+  ): Promise<NullableType<Meme>>;
   abstract findByTitle(title: string): Promise<NullableType<Meme>>;
   abstract findByFileId(fileId: string): Promise<NullableType<Meme>>;
   abstract update(id: Meme['id'], payload: Partial<Meme>): Promise<Meme>;
