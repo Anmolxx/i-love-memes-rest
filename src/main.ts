@@ -75,8 +75,15 @@ async function bootstrap() {
   const options = new DocumentBuilder()
     .setTitle('I Love Memes API')
     .setDescription('I Love Memes Docs')
-    .setVersion('1.0.0-rc4')
-    .addBearerAuth()
+    .setVersion('1.0.0-rc7')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      name: 'Authorization',
+      description: 'JWT Bearer token for authenticated requests',
+      in: 'header',
+    })
     .addGlobalParameters({
       in: 'header',
       required: false,

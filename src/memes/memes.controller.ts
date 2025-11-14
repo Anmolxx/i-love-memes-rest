@@ -71,6 +71,7 @@ export class MemesController {
     type: Number,
     description: 'Number of items per page',
   })
+  @ApiBearerAuth()
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -103,6 +104,7 @@ export class MemesController {
   @UseGuards(OptionalJwtAuthGuard)
   @Get('top')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
   @ApiQuery({
     name: 'page',
     required: false,
@@ -189,6 +191,7 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: Meme })
+  @ApiBearerAuth()
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':slugOrId')
   @HttpCode(HttpStatus.OK)
