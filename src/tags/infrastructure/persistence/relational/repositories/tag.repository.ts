@@ -1,4 +1,9 @@
 import { Tag } from 'src/tags/domain/tag';
+import {
+  TagFilterOptionsDto,
+  TagSortOptionsDto,
+} from 'src/tags/dto/tag-filter-options.dto';
+import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
 import { DeepPartial } from 'src/utils/types/deep-partial.type';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { IPaginationOptions } from 'src/utils/types/pagination-options';
@@ -13,10 +18,10 @@ export abstract class TagRepository {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: any | null;
-    sortOptions?: Array<any> | null;
+    filterOptions?: TagFilterOptionsDto | null;
+    sortOptions?: TagSortOptionsDto | null;
     paginationOptions: IPaginationOptions;
-  }): Promise<Tag[]>;
+  }): Promise<{ items: Tag[]; meta: PaginationMetaDto }>;
 
   abstract findById(id: Tag['id']): Promise<NullableType<Tag>>;
 

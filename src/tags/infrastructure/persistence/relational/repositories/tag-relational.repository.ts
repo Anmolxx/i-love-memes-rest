@@ -3,13 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Tag } from 'src/tags/domain/tag';
 import { NullableType } from 'src/utils/types/nullable.type';
 import { IPaginationOptions } from 'src/utils/types/pagination-options';
-import { In, Repository } from 'typeorm';
+import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
+import { In, Repository, SelectQueryBuilder } from 'typeorm';
 
 import { TagEntity } from '../entities/tag.entity';
 import { MemeTagEntity } from '../entities/meme-tag.entity';
 import { TemplateTagEntity } from '../entities/template-tag.entity';
 import { TagMapper } from '../mapper/tag.mapper';
 import { TagRepository } from './tag.repository';
+import {
+  TagFilterOptionsDto,
+  TagSortOptionsDto,
+  TagSortField,
+} from 'src/tags/dto/tag-filter-options.dto';
 
 @Injectable()
 export class TagRelationalRepository implements TagRepository {
@@ -37,32 +43,94 @@ export class TagRelationalRepository implements TagRepository {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: any | null;
-    sortOptions?: Array<any> | null;
+    filterOptions?: TagFilterOptionsDto | null;
+    sortOptions?: TagSortOptionsDto | null;
     paginationOptions: IPaginationOptions;
-  }): Promise<Tag[]> {
-    const where: any = {};
-    if (filterOptions?.category) {
-      where.category = In(filterOptions.category);
+  }): Promise<{ items: Tag[]; meta: PaginationMetaDto }> {
+    const qb = this.tagRepository.createQueryBuilder('tag');
+
+    // Apply filters at DB level
+    this.applyFilters(qb, filterOptions);
+
+    // Apply sorting at DB level
+    this.applySorting(qb, sortOptions);
+
+    // Apply pagination
+    qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
+      paginationOptions.limit,
+    );
+
+    // Execute query
+    const [entities, total] = await qb.getManyAndCount();
+
+    // Map to domain
+    const items = entities.map((entity) => TagMapper.toDomain(entity));
+
+    const meta: PaginationMetaDto = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
+    };
+
+    return { items, meta };
+  }
+
+  /**
+   * Apply filters to query builder - matching memes pattern
+   */
+  private applyFilters(
+    qb: SelectQueryBuilder<TagEntity>,
+    filterOptions?: TagFilterOptionsDto | null,
+  ): void {
+    // Always filter out soft-deleted records
+    qb.andWhere('tag.deletedAt IS NULL');
+
+    if (filterOptions?.search) {
+      qb.andWhere(
+        '(tag.name ILIKE :search OR tag.normalizedName ILIKE :search)',
+        {
+          search: `%${filterOptions.search}%`,
+        },
+      );
     }
+
+    if (filterOptions?.category && filterOptions.category.length > 0) {
+      qb.andWhere('tag.category IN (:...categories)', {
+        categories: filterOptions.category,
+      });
+    }
+
     if (filterOptions?.status) {
-      where.status = filterOptions.status;
+      qb.andWhere('tag.status = :status', { status: filterOptions.status });
     }
+  }
 
-    const entities = await this.tagRepository.find({
-      skip: (paginationOptions.page - 1) * paginationOptions.limit,
-      take: paginationOptions.limit,
-      where,
-      order: sortOptions?.reduce(
-        (accumulator, sort) => ({
-          ...accumulator,
-          [sort.orderBy]: sort.order,
-        }),
-        {},
-      ),
-    });
+  /**
+   * Apply sorting to query builder - matching memes pattern
+   */
+  private applySorting(
+    qb: SelectQueryBuilder<TagEntity>,
+    sortOptions?: TagSortOptionsDto | null,
+  ): void {
+    const orderBy = sortOptions?.orderBy || TagSortField.CREATED_AT;
+    const order = sortOptions?.order || 'DESC';
 
-    return entities.map((entity) => TagMapper.toDomain(entity));
+    // Map enum to actual column names
+    const columnMap: Record<TagSortField, string> = {
+      [TagSortField.NAME]: 'tag.name',
+      [TagSortField.NORMALIZED_NAME]: 'tag.normalizedName',
+      [TagSortField.SLUG]: 'tag.slug',
+      [TagSortField.CATEGORY]: 'tag.category',
+      [TagSortField.DESCRIPTION]: 'tag.description',
+      [TagSortField.USAGE_COUNT]: 'tag.usageCount',
+      [TagSortField.STATUS]: 'tag.status',
+      [TagSortField.CREATED_AT]: 'tag.createdAt',
+      [TagSortField.UPDATED_AT]: 'tag.updatedAt',
+    };
+
+    const column = columnMap[orderBy] || 'tag.createdAt';
+    qb.orderBy(column, order);
   }
 
   async findById(id: Tag['id']): Promise<NullableType<Tag>> {

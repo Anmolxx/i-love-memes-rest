@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PaginationMetaDto } from '../utils/dto/pagination-response.dto';
 import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
+import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Tag } from './domain/tag';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { FindOrCreateTagsDto } from './dto/find-or-create-tags.dto';
-import { QueryTagDto } from './dto/query-tag.dto';
+import {
+  TagFilterOptionsDto,
+  TagSortOptionsDto,
+} from './dto/tag-filter-options.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { TagRepository } from './infrastructure/persistence/tag.repository';
 import { TagStatus } from './tags.enum';
@@ -71,14 +76,20 @@ export class TagsService {
     return tags;
   }
 
-  async findAll(query: QueryTagDto): Promise<Tag[]> {
+  async findManyWithPagination({
+    filterOptions,
+    sortOptions,
+    paginationOptions,
+  }: {
+    filterOptions?: TagFilterOptionsDto | null;
+    sortOptions?: TagSortOptionsDto | null;
+    paginationOptions: IPaginationOptions;
+  }): Promise<{ items: Tag[]; meta: PaginationMetaDto }> {
+    // Repository now returns { items, meta } directly
     return this.tagRepository.findManyWithPagination({
-      filterOptions: query.filters,
-      sortOptions: query.sort,
-      paginationOptions: {
-        page: query.page || 1,
-        limit: query.limit || 10,
-      },
+      filterOptions,
+      sortOptions,
+      paginationOptions,
     });
   }
 
@@ -103,17 +114,6 @@ export class TagsService {
       throw new NotFoundException(`Tag with slug ${slug} not found`);
     }
     return tag;
-  }
-
-  async search(query: string): Promise<Tag[]> {
-    // Implement search logic based on normalized name
-    // This is a simple implementation, you might want to use full-text search
-    const { normalized } = this.normalizeTagName(query);
-    const allTags = await this.tagRepository.findManyWithPagination({
-      paginationOptions: { page: 1, limit: 100 },
-    });
-
-    return allTags.filter((tag) => tag.normalizedName.includes(normalized));
   }
 
   async update(slugOrId: string, updateTagDto: UpdateTagDto): Promise<Tag> {

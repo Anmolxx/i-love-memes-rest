@@ -17,15 +17,22 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { API_PAGE_LIMIT } from '../constants/common.constant';
+import { createPaginatedResponse } from 'src/utils/base-response';
+import { PaginatedResponse } from 'src/utils/dto/pagination-response.dto';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
 import { Tag } from './domain/tag';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { FindOrCreateTagsDto } from './dto/find-or-create-tags.dto';
-import { QueryTagDto } from './dto/query-tag.dto';
+import {
+  TagFilterOptionsDto,
+  TagSortOptionsDto,
+} from './dto/tag-filter-options.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { TagsService } from './tags.service';
 
@@ -55,15 +62,40 @@ export class TagsController {
   }
 
   @Get()
-  @ApiOkResponse({ type: [Tag] })
-  findAll(@Query() query: QueryTagDto): Promise<Tag[]> {
-    return this.tagsService.findAll(query);
-  }
+  @ApiOkResponse({ type: PaginatedResponse(Tag) })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @HttpCode(HttpStatus.OK)
+  async findAll(
+    @Query() filterOptions: TagFilterOptionsDto,
+    @Query() sortOptions: TagSortOptionsDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
 
-  @Get('search')
-  @ApiOkResponse({ type: [Tag] })
-  search(@Query('q') query: string): Promise<Tag[]> {
-    return this.tagsService.search(query);
+    const { items, meta } = await this.tagsService.findManyWithPagination({
+      filterOptions,
+      sortOptions,
+      paginationOptions: {
+        page: safePage,
+        limit: safeLimit,
+      },
+    });
+
+    return createPaginatedResponse('tags fetched successfully', items, meta);
   }
 
   @Get(':slugOrId')
