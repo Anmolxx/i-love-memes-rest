@@ -48,6 +48,18 @@ export class MemeMapper {
     const calculated_score = (raw as any)['calculated_score'];
     const userInteractions = (raw as any)['user_interactions'];
 
+    let parsedUserInteractions: any = userInteractions;
+    // If the DB returned the user_interactions cast to TEXT, it will be a JSON string
+    if (typeof userInteractions === 'string') {
+      try {
+        parsedUserInteractions = JSON.parse(userInteractions);
+      } catch (e) {
+        // If parsing fails, default to empty array to avoid crashes
+        parsedUserInteractions = [];
+        console.error(e);
+      }
+    }
+
     if (
       typeof upvoteCount !== 'undefined' ||
       typeof downvoteCount !== 'undefined' ||
@@ -74,10 +86,10 @@ export class MemeMapper {
       if (
         userInteractions &&
         domain.interactionSummary &&
-        Array.isArray(userInteractions) &&
-        userInteractions.length > 0
+        Array.isArray(parsedUserInteractions) &&
+        parsedUserInteractions.length > 0
       ) {
-        domain.interactionSummary.userInteractions = userInteractions.map(
+        domain.interactionSummary.userInteractions = parsedUserInteractions.map(
           (interaction: any) => ({
             type: interaction.type,
             createdAt: new Date(interaction.createdAt),

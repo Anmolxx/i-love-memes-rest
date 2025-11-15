@@ -305,13 +305,13 @@ export class MemesRelationalRepository implements MemesRepository {
     // Add user-specific interaction data if currentUserId is provided
     if (currentUserId) {
       qb.addSelect(
-        `(SELECT COALESCE(
+        `CAST((SELECT COALESCE(
           json_agg(
             json_build_object('type', mi.type, 'createdAt', mi."createdAt", 'reason', mi.reason, 'note', mi.note)
             ORDER BY mi."createdAt" DESC
           ),
           '[]'::json
-        ) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId)`,
+        ) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId) AS TEXT)`,
         'user_interactions',
       );
       qb.setParameter('currentUserId', currentUserId);
