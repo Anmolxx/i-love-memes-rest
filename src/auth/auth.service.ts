@@ -203,7 +203,9 @@ export class AuthService {
           id: RoleEnum.user,
         },
         status: {
-          id: StatusEnum.inactive,
+          id: dto.bypassEmailConfirmation
+            ? StatusEnum.active
+            : StatusEnum.inactive,
         },
       });
     } catch (exception) {
@@ -211,26 +213,27 @@ export class AuthService {
       return;
     }
 
-    const hash = await this.jwtService.signAsync(
-      {
-        confirmEmailUserId: user.id,
-      },
-      {
-        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
-          infer: true,
-        }),
-        expiresIn: this.configService.getOrThrow('auth.confirmEmailExpires', {
-          infer: true,
-        }),
-      },
-    );
-
-    await this.mailService.userSignUp({
-      to: dto.email,
-      data: {
-        hash,
-      },
-    });
+    if (!dto.bypassEmailConfirmation) {
+      const hash = await this.jwtService.signAsync(
+        {
+          confirmEmailUserId: user.id,
+        },
+        {
+          secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
+            infer: true,
+          }),
+          expiresIn: this.configService.getOrThrow('auth.confirmEmailExpires', {
+            infer: true,
+          }),
+        },
+      );
+      await this.mailService.userSignUp({
+        to: dto.email,
+        data: {
+          hash,
+        },
+      });
+    }
   }
 
   async confirmEmail(hash: string): Promise<void> {
