@@ -13,9 +13,7 @@ import {
   isUUID,
 } from '../utils/slug.util';
 import {
-  IFilterOptions,
   IPaginationOptions,
-  ISearchOptions,
   ISortOptions,
 } from '../utils/types/pagination-options';
 import { Template } from './domain/template';
@@ -64,7 +62,14 @@ export class TemplateService {
         await this.tagRepository.linkTagToTemplate(template.id, tag.id);
       }
     }
-    return TemplateMapper.toDomain(template);
+
+    const domain = TemplateMapper.toDomain(template);
+    return {
+      ...domain,
+      summary: {
+        totalMemes: 0,
+      },
+    };
   }
 
   async getById(templateId: string) {
@@ -72,7 +77,18 @@ export class TemplateService {
     if (!template) {
       throw new NotFoundException('Template not found with given template id');
     }
-    return TemplateMapper.toDomain(template);
+
+    const domain = TemplateMapper.toDomain(template);
+    const memeCount = await this.templateRepository.getMemeCountByTemplateId(
+      template.id,
+    );
+
+    return {
+      ...domain,
+      summary: {
+        totalMemes: memeCount,
+      },
+    };
   }
 
   async findOne(slugOrId: string): Promise<Template> {
@@ -90,30 +106,53 @@ export class TemplateService {
       );
     }
 
-    return TemplateMapper.toDomain(template);
+    const domain = TemplateMapper.toDomain(template);
+    const memeCount = await this.templateRepository.getMemeCountByTemplateId(
+      template.id,
+    );
+
+    return {
+      ...domain,
+      summary: {
+        totalMemes: memeCount,
+      },
+    };
   }
 
   async getAll(options: {
     paginationOptions: IPaginationOptions;
     sortOptions: ISortOptions<TemplateEntity>;
     search?: string;
-    filterOptions?: Partial<Record<keyof TemplateEntity, string>>;
+    filterOptions?: {
+      search?: string;
+      tags?: string[];
+    };
   }) {
-    const { paginationOptions, sortOptions, search } = options;
+    const { paginationOptions, sortOptions, filterOptions } = options;
 
-    const repoOptions: IPaginationOptions &
-      ISortOptions<TemplateEntity> &
-      IFilterOptions<TemplateEntity> &
-      ISearchOptions = {
+    const repoOptions: any = {
       ...paginationOptions,
       ...sortOptions,
-      search,
+      search: filterOptions?.search,
+      tags: filterOptions?.tags,
     };
 
     const { items: entities, meta } =
       await this.templateRepository.findManyWithPagination(repoOptions);
 
-    const items = entities.map((e) => TemplateMapper.toDomain(e));
+    const items = await Promise.all(
+      entities.map(async (e) => {
+        const domain = TemplateMapper.toDomain(e);
+        const memeCount =
+          await this.templateRepository.getMemeCountByTemplateId(e.id);
+        return {
+          ...domain,
+          summary: {
+            totalMemes: memeCount,
+          },
+        };
+      }),
+    );
 
     return {
       items,

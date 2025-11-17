@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserSummary } from '../../users/domain/user-summary';
 import { Tag } from '../../tags/domain/tag';
+import { TemplateSummaryDto } from '../dto/template-summary.dto';
 
 export class Template {
   @ApiProperty({
@@ -75,4 +76,7 @@ export class Template {
     required: false,
   })
   tags?: Tag[];
+
+  @ApiProperty({ type: () => TemplateSummaryDto, required: false })
+  summary?: TemplateSummaryDto;
 }

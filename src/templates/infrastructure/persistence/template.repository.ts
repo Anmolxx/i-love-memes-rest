@@ -29,4 +29,6 @@ export abstract class TemplateRepository {
   abstract update(updateData: Partial<TemplateEntity>, id: Template['id']);
 
   abstract softDelete(id: Template['id']);
+
+  abstract getMemeCountByTemplateId(templateId: string): Promise<number>;
 }

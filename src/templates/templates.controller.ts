@@ -16,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -26,9 +27,14 @@ import {
   createResponse,
 } from '../utils/base-response';
 import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
+import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Template } from './domain/template';
 import { CreateTemplateDto } from './dto/create-template.dto';
-import { GetTemplatesQueryDto } from './dto/get-all-template-query.dto';
+import {
+  TemplateFilterDto,
+  SortTemplateDto,
+  TemplateSortField,
+} from './dto/template-filter-options.dto';
 import { CreateTemplateResponseDto } from './dto/response/create-template.response.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { TemplateService } from './templates.service';
@@ -57,23 +63,78 @@ export class TemplateController {
   @Get()
   @ApiOkResponse({ type: PaginatedResponse(Template) })
   @HttpCode(HttpStatus.OK)
-  async getAll(@Query() query: GetTemplatesQueryDto) {
-    const {
-      page = 1,
-      limit = 10,
-      orderBy = 'createdAt',
-      order = 'DESC',
-      search,
-    } = query;
-    const effectiveLimit = Math.min(limit, API_PAGE_LIMIT);
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description:
+      'Search term for template title/description (partial, case-insensitive)',
+    example: 'funny',
+  })
+  @ApiQuery({
+    name: 'tags',
+    required: false,
+    type: String,
+    description: 'Filter templates by tags (comma-separated tag names)',
+    example: 'funny',
+  })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: ['createdAt', 'updatedAt', 'title'],
+    description: 'Field to sort templates by',
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort direction',
+    example: 'DESC',
+  })
+  async getAll(
+    @Query() filterOptions: TemplateFilterDto,
+    @Query() sortOptions: SortTemplateDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) {
+      safeLimit = API_PAGE_LIMIT;
+    }
 
-    const options = {
-      paginationOptions: { page, limit: effectiveLimit },
-      sortOptions: { orderBy, order },
-      search,
-    };
+    const sortOrder = sortOptions.order ?? 'DESC';
+    const sortField = sortOptions.orderBy ?? TemplateSortField.CREATED_AT;
 
-    const { items, meta } = await this.templateService.getAll(options);
+    const { items, meta } = await this.templateService.getAll({
+      paginationOptions: {
+        page: safePage,
+        limit: safeLimit,
+      } as IPaginationOptions,
+      sortOptions: {
+        orderBy: sortField,
+        order: sortOrder as 'ASC' | 'DESC',
+      },
+      filterOptions: {
+        search: filterOptions.search,
+        tags: filterOptions.tags,
+      },
+    });
 
     return createPaginatedResponse(
       'Templates fetched successfully',

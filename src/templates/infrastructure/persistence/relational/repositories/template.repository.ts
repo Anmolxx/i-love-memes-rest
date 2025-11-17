@@ -63,10 +63,21 @@ export class TemplateRelationalRepository implements TemplateRepository {
       ISearchOptions,
   ): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }> {
     const { page, limit, orderBy, order, filter, search } = options;
+    const tags = (options as any).tags as string[] | undefined;
 
     const qb: SelectQueryBuilder<TemplateEntity> =
       this.templateRepository.createQueryBuilder('template');
+
+    // Load related tags and author
+    qb.leftJoinAndSelect('template.tags', 'tag');
+    qb.leftJoinAndSelect('template.author', 'author');
+
     qb.orderBy(`template.${String(orderBy)}`, order);
+
+    // Filter by tags if provided
+    if (tags && tags.length > 0) {
+      qb.andWhere('tag.name IN (:...tagNames)', { tagNames: tags });
+    }
 
     if (filter) {
       for (const [key, value] of Object.entries(filter)) {
@@ -116,7 +127,21 @@ export class TemplateRelationalRepository implements TemplateRepository {
 
     return this.templateRepository.save(template);
   }
+
   async softDelete(id: Template['id']) {
     await this.templateRepository.softDelete(id);
+  }
+
+  async getMemeCountByTemplateId(templateId: string): Promise<number> {
+    const qb: SelectQueryBuilder<TemplateEntity> =
+      this.templateRepository.createQueryBuilder('template');
+
+    const result = await qb
+      .leftJoin('template.memes', 'meme')
+      .where('template.id = :templateId', { templateId })
+      .select('COUNT(meme.id)', 'count')
+      .getRawOne();
+
+    return result?.count ? parseInt(result.count, 10) : 0;
   }
 }
