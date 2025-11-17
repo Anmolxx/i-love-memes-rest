@@ -142,6 +142,161 @@ describe('Users Module', () => {
             expect(body.data[0].password).not.toBeDefined();
           });
       });
+
+      it('should filter users by email: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?email=admin`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+            if (body.data.length > 0) {
+              expect(body.data[0].email).toBeDefined();
+            }
+          });
+      });
+
+      it('should filter users by firstName: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?firstName=Admin`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+          });
+      });
+
+      it('should filter users by lastName: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?lastName=E2E`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+          });
+      });
+
+      it('should filter users by status: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?status=${StatusEnum.active}`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+            if (body.data.length > 0) {
+              expect(body.data[0].status.id).toBe(StatusEnum.active);
+            }
+          });
+      });
+
+      it('should sort users by createdAt ascending: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?orderBy=createdAt&order=ASC`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+            if (body.data.length > 1) {
+              const firstDate = new Date(body.data[0].createdAt);
+              const secondDate = new Date(body.data[1].createdAt);
+              expect(firstDate.getTime()).toBeLessThanOrEqual(
+                secondDate.getTime(),
+              );
+            }
+          });
+      });
+
+      it('should sort users by createdAt descending: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?orderBy=createdAt&order=DESC`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+            if (body.data.length > 1) {
+              const firstDate = new Date(body.data[0].createdAt);
+              const secondDate = new Date(body.data[1].createdAt);
+              expect(firstDate.getTime()).toBeGreaterThanOrEqual(
+                secondDate.getTime(),
+              );
+            }
+          });
+      });
+
+      it('should sort users by email: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?orderBy=email&order=ASC`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+          });
+      });
+
+      it('should sort users by firstName: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?orderBy=firstName&order=ASC`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+          });
+      });
+
+      it('should sort users by lastName: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(`/api/v1/users?orderBy=lastName&order=ASC`)
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+          });
+      });
+
+      it('should combine filters and sorting: /api/v1/users (GET)', () => {
+        return request(app)
+          .get(
+            `/api/v1/users?status=${StatusEnum.active}&orderBy=createdAt&order=DESC`,
+          )
+          .auth(apiToken, {
+            type: 'bearer',
+          })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.data).toBeDefined();
+            expect(Array.isArray(body.data)).toBe(true);
+            if (body.data.length > 0) {
+              expect(body.data[0].status.id).toBe(StatusEnum.active);
+            }
+          });
+      });
     });
   });
 });

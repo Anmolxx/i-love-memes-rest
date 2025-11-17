@@ -135,8 +135,8 @@ export class UsersService {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: FilterUserDto | null;
-    sortOptions?: SortUserDto[] | null;
+    filterOptions?: FilterUserDto;
+    sortOptions?: SortUserDto;
     paginationOptions: IPaginationOptions;
   }): Promise<{ data: User[]; meta: PaginationMetaDto }> {
     const result = await this.usersRepository.findManyWithPagination({

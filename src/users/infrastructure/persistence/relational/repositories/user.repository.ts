@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { FindOptionsWhere, In, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
 import { NullableType } from '../../../../../utils/types/nullable.type';
 import { IPaginationOptions } from '../../../../../utils/types/pagination-options';
 import { User } from '../../../../domain/user';
@@ -30,28 +30,46 @@ export class UsersRelationalRepository implements UserRepository {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: FilterUserDto | null;
-    sortOptions?: SortUserDto[] | null;
+    filterOptions?: FilterUserDto;
+    sortOptions?: SortUserDto;
     paginationOptions: IPaginationOptions;
   }): Promise<{ data: UserEntity[]; totalItems: number }> {
     const where: FindOptionsWhere<UserEntity> = {};
-    if (filterOptions?.roles?.length) {
-      where.role = filterOptions.roles.map((role) => ({
-        id: role.id as any,
-      }));
+
+    if (filterOptions?.firstName) {
+      where.firstName = ILike(`%${filterOptions.firstName}%`);
+    }
+
+    if (filterOptions?.lastName) {
+      where.lastName = ILike(`%${filterOptions.lastName}%`);
+    }
+
+    if (filterOptions?.email) {
+      where.email = ILike(`%${filterOptions.email}%`);
+    }
+
+    if (filterOptions?.status) {
+      where.status = {
+        id: filterOptions.status as any,
+      };
+    }
+
+    if (filterOptions?.role) {
+      where.role = {
+        id: filterOptions.role as any,
+      };
+    }
+
+    const order: any = {};
+    if (sortOptions?.orderBy && sortOptions?.order) {
+      order[sortOptions.orderBy] = sortOptions.order;
     }
 
     const [entities, totalItems] = await this.usersRepository.findAndCount({
       skip: (paginationOptions.page - 1) * paginationOptions.limit,
       take: paginationOptions.limit,
       where: where,
-      order: sortOptions?.reduce(
-        (accumulator, sort) => ({
-          ...accumulator,
-          [sort.orderBy]: sort.order,
-        }),
-        {},
-      ),
+      order: order,
     });
 
     return {

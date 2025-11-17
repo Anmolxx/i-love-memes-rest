@@ -18,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { API_PAGE_LIMIT } from '../constants/common.constant';
@@ -29,7 +30,7 @@ import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { NullableType } from '../utils/types/nullable.type';
 import { User } from './domain/user';
 import { CreateUserDto } from './dto/create-user.dto';
-import { QueryUserDto } from './dto/query-user.dto';
+import { FilterUserDto, SortUserDto } from './dto/query-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
@@ -62,21 +63,89 @@ export class UsersController {
   @SerializeOptions({
     groups: ['admin'],
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+    example: 2,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'firstName',
+    required: false,
+    type: String,
+    description: 'Filter users by first name (partial, case-insensitive)',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'lastName',
+    required: false,
+    type: String,
+    description: 'Filter users by last name (partial, case-insensitive)',
+    example: 'Doe',
+  })
+  @ApiQuery({
+    name: 'email',
+    required: false,
+    type: String,
+    description: 'Filter users by email (partial, case-insensitive)',
+    example: 'john.doe@example.com',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: Number,
+    description: 'Filter users by status ID',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    type: Number,
+    description: 'Filter users by role ID',
+    example: 2,
+  })
+  @ApiQuery({
+    name: 'orderBy',
+    required: false,
+    enum: ['createdAt', 'updatedAt', 'firstName', 'lastName', 'email'],
+    description: 'Field to sort users by',
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort direction',
+    example: 'DESC',
+  })
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(@Query() query: QueryUserDto) {
-    const page = query?.page ?? 1;
-    let limit = query?.limit ?? 10;
-    if (limit > API_PAGE_LIMIT) {
-      limit = API_PAGE_LIMIT;
+  async findAll(
+    @Query() filterOptions: FilterUserDto,
+    @Query() sortOptions: SortUserDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) {
+      safeLimit = API_PAGE_LIMIT;
     }
 
     const result = await this.usersService.findManyWithPagination({
-      filterOptions: query?.filters,
-      sortOptions: query?.sort,
+      filterOptions,
+      sortOptions,
       paginationOptions: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
       },
     });
 

@@ -16,8 +16,8 @@ export abstract class UserRepository {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: FilterUserDto | null;
-    sortOptions?: SortUserDto[] | null;
+    filterOptions?: FilterUserDto;
+    sortOptions?: SortUserDto;
     paginationOptions: IPaginationOptions;
   }): Promise<{ data: UserEntity[]; totalItems: number }>;
 
