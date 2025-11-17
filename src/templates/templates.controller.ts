@@ -84,7 +84,7 @@ export class TemplateController {
   @ApiQuery({
     name: 'tags',
     required: false,
-    type: String,
+    type: Array<string>,
     description: 'Filter templates by tags (comma-separated tag names)',
     example: 'funny',
   })
@@ -104,7 +104,7 @@ export class TemplateController {
   })
   async getAll(
     @Query('search') search?: string,
-    @Query('tags') tags?: string,
+    @Query('tags') tags?: Array<string>,
     @Query('orderBy') orderBy?: TemplateSortField,
     @Query('order') order?: 'ASC' | 'DESC',
     @Query('page') page?: number,
@@ -120,9 +120,19 @@ export class TemplateController {
     const sortField = orderBy ?? TemplateSortField.CREATED_AT;
 
     // Parse tags if provided
-    const parsedTags = tags
-      ? tags.split(',').map((tag) => tag.trim())
-      : undefined;
+    let parsedTags: Array<string> | undefined;
+
+    switch (typeof tags) {
+      case 'string':
+        parsedTags = (tags as string).split(',').map((tag) => tag.trim());
+        break;
+      case 'object':
+        parsedTags = tags;
+        break;
+      default:
+        parsedTags = undefined;
+        break;
+    }
 
     const { items, meta } = await this.templateService.getAll({
       paginationOptions: {
