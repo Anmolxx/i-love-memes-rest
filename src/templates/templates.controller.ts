@@ -30,12 +30,8 @@ import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
 import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Template } from './domain/template';
 import { CreateTemplateDto } from './dto/create-template.dto';
-import {
-  TemplateFilterDto,
-  SortTemplateDto,
-  TemplateSortField,
-} from './dto/template-filter-options.dto';
 import { CreateTemplateResponseDto } from './dto/response/create-template.response.dto';
+import { TemplateSortField } from './dto/template-filter-options.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { TemplateService } from './templates.service';
 
@@ -107,8 +103,10 @@ export class TemplateController {
     example: 'DESC',
   })
   async getAll(
-    @Query() filterOptions: TemplateFilterDto,
-    @Query() sortOptions: SortTemplateDto,
+    @Query('search') search?: string,
+    @Query('tags') tags?: string,
+    @Query('orderBy') orderBy?: TemplateSortField,
+    @Query('order') order?: 'ASC' | 'DESC',
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
@@ -118,8 +116,13 @@ export class TemplateController {
       safeLimit = API_PAGE_LIMIT;
     }
 
-    const sortOrder = sortOptions.order ?? 'DESC';
-    const sortField = sortOptions.orderBy ?? TemplateSortField.CREATED_AT;
+    const sortOrder = order ?? 'DESC';
+    const sortField = orderBy ?? TemplateSortField.CREATED_AT;
+
+    // Parse tags if provided
+    const parsedTags = tags
+      ? tags.split(',').map((tag) => tag.trim())
+      : undefined;
 
     const { items, meta } = await this.templateService.getAll({
       paginationOptions: {
@@ -131,8 +134,8 @@ export class TemplateController {
         order: sortOrder as 'ASC' | 'DESC',
       },
       filterOptions: {
-        search: filterOptions.search,
-        tags: filterOptions.tags,
+        search: search,
+        tags: parsedTags,
       },
     });
 
