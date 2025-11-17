@@ -139,6 +139,7 @@ export class TemplateRelationalRepository implements TemplateRepository {
     const result = await qb
       .leftJoin('template.memes', 'meme')
       .where('template.id = :templateId', { templateId })
+      .andWhere('meme.deletedAt IS NULL')
       .select('COUNT(meme.id)', 'count')
       .getRawOne();
 

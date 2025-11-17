@@ -8,12 +8,14 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
 import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
 import { TagEntity } from '../../../../../tags/infrastructure/persistence/relational/entities/tag.entity';
+import { MemeEntity } from '../../../../../memes/infrastructure/persistence/relational/entities/meme.entity';
 
 @Entity({
   name: 'template',
@@ -51,6 +53,9 @@ export class TemplateEntity extends EntityRelationalHelper {
     inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
   })
   tags: TagEntity[];
+
+  @OneToMany(() => MemeEntity, (meme) => meme.template)
+  memes: MemeEntity[];
 
   @CreateDateColumn()
   createdAt: Date;
