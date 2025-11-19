@@ -29,6 +29,7 @@ import { SessionModule } from './session/session.module';
 import { TagsModule } from './tags/tags.module';
 import { TemplateModule } from './templates/templates.module';
 import { UsersModule } from './users/users.module';
+import { StatsModule } from './stats/stats.module';
 
 const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
   useClass: TypeOrmConfigService,
@@ -92,6 +93,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     TagsModule,
     InteractionsModule,
     CommentsModule,
+    StatsModule,
   ],
 })
 export class AppModule {}
