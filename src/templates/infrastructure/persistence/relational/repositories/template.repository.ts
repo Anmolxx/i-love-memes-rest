@@ -1,17 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { JwtPayloadType } from '../../../../../auth/strategies/types/jwt-payload.type';
-import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
-import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
-import {
-  IFilterOptions,
-  IPaginationOptions,
-  ISearchOptions,
-  ISortOptions,
-} from '../../../../../utils/types/pagination-options';
+import { JwtPayloadType } from 'src/auth/strategies/types/jwt-payload.type';
+import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
+import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
+import { IFilterOptions, IPaginationOptions, ISortOptions } from 'src/utils';
 import { Template } from '../../../../domain/template';
 import { CreateTemplateDto } from '../../../../dto/create-template.dto';
+import {
+  ITemplateFilters,
+  TemplateSortField,
+} from '../../../../dto/template-filter-options.dto';
 import { TemplateRepository } from '../../template.repository';
 import { TemplateEntity } from '../entities/template.entity';
 
@@ -56,14 +55,13 @@ export class TemplateRelationalRepository implements TemplateRepository {
     });
   }
 
-  async findManyWithPagination(
-    options: IPaginationOptions &
-      ISortOptions<TemplateEntity> &
-      IFilterOptions<TemplateEntity> &
-      ISearchOptions,
-  ): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }> {
-    const { page, limit, orderBy, order, filter, search } = options;
-    const tags = (options as any).tags as string[] | undefined;
+  async findManyWithPagination(options: {
+    paginationOptions: IPaginationOptions;
+    sortOptions?: ISortOptions<TemplateSortField>;
+    filterOptions?: IFilterOptions<ITemplateFilters> | null;
+  }): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }> {
+    const { paginationOptions, sortOptions, filterOptions } = options;
+    const { page, limit } = paginationOptions;
 
     const qb: SelectQueryBuilder<TemplateEntity> =
       this.templateRepository.createQueryBuilder('template');
@@ -72,26 +70,27 @@ export class TemplateRelationalRepository implements TemplateRepository {
     qb.leftJoinAndSelect('template.tags', 'tag');
     qb.leftJoinAndSelect('template.author', 'author');
 
-    qb.orderBy(`template.${String(orderBy)}`, order);
+    // Apply sorting
+    if (sortOptions?.orderBy) {
+      qb.orderBy(
+        `template.${sortOptions.orderBy}`,
+        sortOptions.order ?? 'DESC',
+      );
+    } else {
+      qb.orderBy('template.createdAt', 'DESC');
+    }
+
+    // Filter by search
+    if (filterOptions?.search) {
+      qb.andWhere('template.title ILIKE :title', {
+        title: `%${filterOptions.search}%`,
+      });
+    }
 
     // Filter by tags if provided
-    if (tags && tags.length > 0) {
-      qb.andWhere('tag.name IN (:...tagNames)', { tagNames: tags });
-    }
-
-    if (filter) {
-      for (const [key, value] of Object.entries(filter)) {
-        if (value) {
-          qb.andWhere(`template.${key} ILIKE :${key}`, {
-            [key]: `%${value}%`,
-          });
-        }
-      }
-    }
-
-    if (search) {
-      qb.andWhere(`template.title ILIKE :title`, {
-        title: `%${search}%`,
+    if (filterOptions?.tags && filterOptions.tags.length > 0) {
+      qb.andWhere('tag.name IN (:...tagNames)', {
+        tagNames: filterOptions.tags,
       });
     }
 
@@ -130,6 +129,73 @@ export class TemplateRelationalRepository implements TemplateRepository {
 
   async softDelete(id: Template['id']) {
     await this.templateRepository.softDelete(id);
+  }
+
+  async findDeletedWithPagination(options: {
+    paginationOptions: IPaginationOptions;
+    sortOptions?: ISortOptions<TemplateSortField>;
+    filterOptions?: IFilterOptions<ITemplateFilters> | null;
+  }): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }> {
+    const { paginationOptions, sortOptions, filterOptions } = options;
+    const { page, limit } = paginationOptions;
+
+    const qb: SelectQueryBuilder<TemplateEntity> =
+      this.templateRepository.createQueryBuilder('template');
+
+    qb.withDeleted();
+    qb.andWhere('template.deletedAt IS NOT NULL');
+
+    // Load related tags and author
+    qb.leftJoinAndSelect('template.tags', 'tag');
+    qb.leftJoinAndSelect('template.author', 'author');
+
+    // Apply sorting
+    if (sortOptions?.orderBy) {
+      qb.orderBy(
+        `template.${sortOptions.orderBy}`,
+        sortOptions.order ?? 'DESC',
+      );
+    } else {
+      qb.orderBy('template.createdAt', 'DESC');
+    }
+
+    // Filter by search
+    if (filterOptions?.search) {
+      qb.andWhere('template.title ILIKE :title', {
+        title: `%${filterOptions.search}%`,
+      });
+    }
+
+    // Filter by tags if provided
+    if (filterOptions?.tags && filterOptions.tags.length > 0) {
+      qb.andWhere('tag.name IN (:...tagNames)', {
+        tagNames: filterOptions.tags,
+      });
+    }
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    const meta: PaginationMetaDto = {
+      totalItems: total,
+      totalPages: Math.ceil(total / limit) || 1,
+      currentPage: page,
+      limit,
+    };
+
+    return {
+      items: data,
+      meta,
+    };
+  }
+
+  async restore(id: Template['id']): Promise<void> {
+    await this.templateRepository.restore(id);
+  }
+
+  async hardDelete(id: Template['id']): Promise<void> {
+    await this.templateRepository.delete(id);
   }
 
   async getMemeCountByTemplateId(templateId: string): Promise<number> {

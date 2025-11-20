@@ -5,10 +5,12 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  Res,
   SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
@@ -18,22 +20,18 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { Response } from 'express';
+import { API_PAGE_LIMIT, extractQueryOptions } from 'src/utils';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
-import { API_PAGE_LIMIT } from '../constants/common.constant';
 import { User } from '../users/domain/user';
 import { createPaginatedResponse } from '../utils/base-response';
 import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
-import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Meme } from './domain/meme';
 import { CreateMemeDto } from './dto/create-meme.dto';
-import {
-  MemeFilterOptionsDto,
-  MemeSortOptionsDto,
-} from './dto/meme-filter-options.dto';
+import { MemeQueryDto, MemeSortField } from './dto/meme-filter-options.dto';
 import { UpdateMemeDto } from './dto/update-meme.dto';
 import { MemesService } from './memes.service';
 
@@ -58,41 +56,22 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin'] })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number for pagination',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-  })
+  @SerializeOptions({ groups: ['admin', 'user'] })
   @ApiBearerAuth()
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(
     @CurrentUser() user: User | null,
-    @Query() filterOptions: MemeFilterOptionsDto,
-    @Query() sortOptions: MemeSortOptionsDto,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: MemeQueryDto,
   ) {
-    const safePage = page ?? 1;
-    let safeLimit = limit ?? 10;
-    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
 
     const { items, meta } = await this.memesService.findManyWithPagination({
       filterOptions,
       sortOptions,
-      paginationOptions: {
-        page: safePage,
-        limit: safeLimit,
-      } as IPaginationOptions,
+      paginationOptions,
       currentUserId: user?.id,
     });
 
@@ -100,41 +79,22 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin'] })
+  @SerializeOptions({ groups: ['admin', 'user'] })
   @UseGuards(OptionalJwtAuthGuard)
   @Get('top')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number for pagination',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-  })
   async findTopMemes(
     @CurrentUser() user: User | null,
-    @Query() filterOptions: MemeFilterOptionsDto,
-    @Query() sortOptions: MemeSortOptionsDto,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: MemeQueryDto,
   ) {
-    const safePage = page ?? 1;
-    let safeLimit = limit ?? 10;
-    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
 
     const { items, meta } = await this.memesService.findTopMemes({
       filterOptions,
       sortOptions,
-      paginationOptions: {
-        page: safePage,
-        limit: safeLimit,
-      } as IPaginationOptions,
+      paginationOptions,
       currentUserId: user?.id,
     });
 
@@ -145,42 +105,20 @@ export class MemesController {
     );
   }
 
-  @ApiOkResponse({ type: [Meme] })
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
   @ApiBearerAuth()
-  @SerializeOptions({ groups: ['admin'] })
+  @SerializeOptions({ groups: ['admin', 'user'] })
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   @HttpCode(HttpStatus.OK)
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number for pagination',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-  })
-  async findMyMemes(
-    @CurrentUser() user: User,
-    @Query() filterOptions: MemeFilterOptionsDto,
-    @Query() sortOptions: MemeSortOptionsDto,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const safePage = page ?? 1;
-    let safeLimit = limit ?? 10;
-    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+  async findMyMemes(@CurrentUser() user: User, @Query() query: MemeQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
 
     const { items, meta } = await this.memesService.findMyMemes(user, {
       filterOptions,
       sortOptions,
-      paginationOptions: {
-        page: safePage,
-        limit: safeLimit,
-      } as IPaginationOptions,
+      paginationOptions,
     });
 
     return createPaginatedResponse(
@@ -255,5 +193,115 @@ export class MemesController {
       success: true,
       message: 'Meme deleted successfully',
     };
+  }
+
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
+  @SerializeOptions({ groups: ['admin'] })
+  @UseGuards(AuthGuard('jwt'))
+  @Get('deleted')
+  @HttpCode(HttpStatus.OK)
+  async findDeleted(@Query() query: MemeQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
+
+    const { items, meta } = await this.memesService.findDeletedWithPagination({
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'Deleted memes fetched successfully',
+      items,
+      meta,
+    );
+  }
+
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
+  @SerializeOptions({ groups: ['admin'] })
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/deleted')
+  @HttpCode(HttpStatus.OK)
+  async findMyDeleted(@CurrentUser() user: User, @Query() query: MemeQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
+
+    const { items, meta } = await this.memesService.findMyDeleted(user, {
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'User deleted memes fetched successfully',
+      items,
+      meta,
+    );
+  }
+
+  @ApiOkResponse({ type: Meme })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':slugOrId/restore')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    required: true,
+    description: 'Meme slug or ID',
+  })
+  async restore(
+    @Param('slugOrId') slugOrId: string,
+    @CurrentUser() user: User,
+  ) {
+    const meme = await this.memesService.restore(slugOrId, user);
+    return {
+      success: true,
+      message: 'Meme restored successfully',
+      data: meme,
+    };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':slugOrId/permanent')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    required: true,
+    description: 'Meme slug or ID',
+  })
+  async hardDelete(
+    @Param('slugOrId') slugOrId: string,
+    @CurrentUser() user: User,
+  ) {
+    await this.memesService.hardDelete(slugOrId, user);
+  }
+
+  @ApiOkResponse({ description: 'Print ready file stream' })
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':slugOrId/print-ready')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'slugOrId',
+    type: String,
+    required: true,
+    description: 'Meme slug or ID',
+  })
+  async printReady(
+    @Param('slugOrId') slugOrId: string,
+    @Res({ passthrough: true }) res: Response,
+    @CurrentUser() user: User | null,
+  ) {
+    const fileResult = await this.memesService.getPrintReadyFile(
+      slugOrId,
+      user?.id,
+    );
+    if (!fileResult) {
+      throw new NotFoundException('Print ready file not found');
+    } else {
+      res.redirect('/api/v1/files/' + fileResult);
+    }
   }
 }

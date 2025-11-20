@@ -1,24 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  isMemeFilterOptionsDto,
-  MemeFilterOptionsDto,
+  IMemeFilters,
   MemeSortField,
-  MemeSortOptionsDto,
 } from 'src/memes/dto/meme-filter-options.dto';
+import {
+  IFilterOptions,
+  ISortOptions,
+} from 'src/utils/types/pagination-options';
 import {
   ALLTIME_MEME_SCORING_CONFIG,
   DEFAULT_MEME_SCORING_CONFIG,
   MemeScoringConfig,
   TRENDING_MEME_SCORING_CONFIG,
 } from 'src/memes/meme-scoring.config';
-import { Repository, SelectQueryBuilder } from 'typeorm';
-import { PaginationMetaDto } from '../../../../../utils/dto/pagination-response.dto';
-import { Meme } from '../../../../domain/meme';
-import { MemeAudience } from '../../../../memes.enum';
-import { MemesRepository } from '../../meme.repository';
-import { MemeEntity } from '../entities/meme.entity';
-import { MemeMapper } from '../mapper/meme.mapper';
+import { Repository, SelectQueryBuilder, DeleteResult } from 'typeorm';
+import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
+import { Meme } from 'src/memes/domain/meme';
+import { MemeAudience } from 'src/memes/memes.enum';
+import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
+import { MemeEntity } from 'src/memes/infrastructure/persistence/relational/entities/meme.entity';
+import { MemeMapper } from 'src/memes/infrastructure/persistence/relational/mapper/meme.mapper';
 
 @Injectable()
 export class MemesRelationalRepository implements MemesRepository {
@@ -41,8 +43,8 @@ export class MemesRelationalRepository implements MemesRepository {
     paginationOptions,
     currentUserId,
   }: {
-    filterOptions?: MemeFilterOptionsDto | null;
-    sortOptions?: MemeSortOptionsDto;
+    filterOptions?: IFilterOptions<IMemeFilters> | null;
+    sortOptions?: ISortOptions<MemeSortField>;
     paginationOptions: { page: number; limit: number };
     currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
@@ -173,8 +175,8 @@ export class MemesRelationalRepository implements MemesRepository {
       paginationOptions,
       currentUserId,
     }: {
-      filterOptions?: MemeFilterOptionsDto | null;
-      sortOptions?: MemeSortOptionsDto;
+      filterOptions?: IFilterOptions<IMemeFilters> | null;
+      sortOptions?: ISortOptions<MemeSortField>;
       paginationOptions: { page: number; limit: number };
       currentUserId?: string;
     } = { paginationOptions: { page: 1, limit: 10 } },
@@ -222,6 +224,120 @@ export class MemesRelationalRepository implements MemesRepository {
     return { items, meta };
   }
 
+  async findDeletedWithPagination({
+    filterOptions,
+    sortOptions,
+    paginationOptions,
+  }: {
+    filterOptions?: IFilterOptions<IMemeFilters> | null;
+    sortOptions?: ISortOptions<MemeSortField>;
+    paginationOptions: { page: number; limit: number };
+  }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
+    const qb = this.memesRepository.createQueryBuilder('meme');
+
+    // Include only deleted records
+    qb.withDeleted().where('meme.deletedAt IS NOT NULL');
+
+    // Apply base joins and selects
+    this.applyCommonQueryOptions(qb, {
+      filterOptions,
+      sortOptions,
+      enforceAudiencePublic: false,
+      currentUserId: undefined,
+    });
+
+    qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
+      paginationOptions.limit,
+    );
+
+    const { raw, entities } = await qb.getRawAndEntities();
+
+    // Build separate count query
+    const countQb = this.memesRepository.createQueryBuilder('meme');
+    countQb.withDeleted().where('meme.deletedAt IS NOT NULL');
+    this.applyBaseJoins(countQb);
+    this.applyFilters(countQb, filterOptions, false);
+    const total = await countQb.getCount();
+
+    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
+
+    const meta = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
+    };
+
+    return { items, meta };
+  }
+
+  // New: findByAuthorIdDeleted
+  async findByAuthorIdDeleted(
+    userId: string,
+    {
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+      currentUserId,
+    }: {
+      filterOptions?: IFilterOptions<IMemeFilters> | null;
+      sortOptions?: ISortOptions<MemeSortField>;
+      paginationOptions: { page: number; limit: number };
+      currentUserId?: string;
+    },
+  ): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
+    const qb = this.memesRepository.createQueryBuilder('meme');
+
+    qb.withDeleted();
+    qb.where('meme.deletedAt IS NOT NULL');
+    qb.andWhere('author.id = :userId', { userId });
+
+    this.applyCommonQueryOptions(qb, {
+      filterOptions,
+      sortOptions,
+      enforceAudiencePublic: false,
+      currentUserId,
+    });
+
+    qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
+      paginationOptions.limit,
+    );
+
+    const { raw, entities } = await qb.getRawAndEntities();
+
+    const countQb = this.memesRepository.createQueryBuilder('meme');
+    countQb.withDeleted();
+    countQb.where('meme.deletedAt IS NOT NULL');
+    countQb.andWhere('author.id = :userId', { userId });
+    this.applyBaseJoins(countQb);
+    this.applyFilters(countQb, filterOptions, false);
+    const total = await countQb.getCount();
+
+    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+    const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
+
+    const meta = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
+    };
+
+    return { items, meta };
+  }
+
+  // New: restore
+  async restore(id: string): Promise<void> {
+    await this.memesRepository.restore(id);
+  }
+
+  // New: hardDelete
+  async hardDelete(id: string): Promise<DeleteResult> {
+    return await this.memesRepository.delete(id);
+  }
+
   /**
    * Apply base joins to query builder
    */
@@ -238,7 +354,7 @@ export class MemesRelationalRepository implements MemesRepository {
    */
   private applyFilters(
     qb: SelectQueryBuilder<MemeEntity>,
-    filterOptions?: MemeFilterOptionsDto | null,
+    filterOptions?: IFilterOptions<IMemeFilters> | null,
     enforceAudiencePublic?: boolean,
   ): void {
     // Always filter out soft-deleted records
@@ -256,21 +372,16 @@ export class MemesRelationalRepository implements MemesRepository {
       });
     }
 
-    if (isMemeFilterOptionsDto(filterOptions)) {
-      if (filterOptions?.tags && filterOptions.tags.length > 0) {
-        qb.andWhere(
-          '(tags.name IN (:...tagIds) OR tags.slug IN (:...tagIds))',
-          {
-            tagIds: filterOptions.tags,
-          },
-        ).distinct(true);
-      }
+    if (filterOptions?.tags && filterOptions.tags.length > 0) {
+      qb.andWhere('(tags.name IN (:...tagIds) OR tags.slug IN (:...tagIds))', {
+        tagIds: filterOptions.tags,
+      }).distinct(true);
+    }
 
-      if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
-        qb.andWhere('meme.template IN (:...templateIds)', {
-          templateIds: filterOptions.templateIds,
-        });
-      }
+    if (filterOptions?.templateIds && filterOptions.templateIds.length > 0) {
+      qb.andWhere('meme.template IN (:...templateIds)', {
+        templateIds: filterOptions.templateIds,
+      });
     }
   }
 
@@ -323,7 +434,7 @@ export class MemesRelationalRepository implements MemesRepository {
    */
   private applySorting(
     qb: SelectQueryBuilder<MemeEntity>,
-    sortOptions?: MemeSortOptionsDto,
+    sortOptions?: ISortOptions<MemeSortField>,
   ): void {
     if (
       sortOptions?.orderBy === MemeSortField.UPVOTES ||
@@ -407,7 +518,7 @@ export class MemesRelationalRepository implements MemesRepository {
    * Initializes with a base where condition to ensure proper query building
    */
   private buildCountQuery(
-    filterOptions?: MemeFilterOptionsDto | null,
+    filterOptions?: IFilterOptions<IMemeFilters> | null,
     enforceAudiencePublic?: boolean,
   ): SelectQueryBuilder<MemeEntity> {
     const countQb = this.memesRepository.createQueryBuilder('meme');
@@ -424,8 +535,8 @@ export class MemesRelationalRepository implements MemesRepository {
   private applyCommonQueryOptions(
     qb: SelectQueryBuilder<MemeEntity>,
     opts: {
-      filterOptions?: MemeFilterOptionsDto | null;
-      sortOptions?: MemeSortOptionsDto;
+      filterOptions?: IFilterOptions<IMemeFilters> | null;
+      sortOptions?: ISortOptions<MemeSortField>;
       enforceAudiencePublic?: boolean;
       currentUserId?: string;
     },

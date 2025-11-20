@@ -1,4 +1,4 @@
-import { NullableType } from '../../../utils/types/nullable.type';
+import { NullableType } from 'src/utils/types/nullable.type';
 import { FileType } from '../../domain/file';
 import { FileStatus } from '../../file.enum';
 
@@ -20,4 +20,9 @@ export abstract class FileRepository {
     page: number,
     limit: number,
   ): Promise<{ items: FileType[]; totalItems: number }>;
+
+  // Permanently delete file record and underlying storage
+  abstract hardDelete(id: FileType['id']): Promise<void>;
+
+  abstract getFilePath(entity: FileType): Promise<NullableType<string>>;
 }

@@ -1,14 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PaginationMetaDto } from '../utils/dto/pagination-response.dto';
 import { generateBaseSlug, generateUniqueSlug } from '../utils/slug.util';
-import { IPaginationOptions } from '../utils/types/pagination-options';
+import {
+  IFilterOptions,
+  IPaginationOptions,
+  ISortOptions,
+} from '../utils/types/pagination-options';
 import { Tag } from './domain/tag';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { FindOrCreateTagsDto } from './dto/find-or-create-tags.dto';
-import {
-  TagFilterOptionsDto,
-  TagSortOptionsDto,
-} from './dto/tag-filter-options.dto';
+import { ITagFilters, TagSortField } from './dto/tag-filter-options.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { TagRepository } from './infrastructure/persistence/tag.repository';
 import { TagStatus } from './tags.enum';
@@ -81,8 +86,8 @@ export class TagsService {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: TagFilterOptionsDto | null;
-    sortOptions?: TagSortOptionsDto | null;
+    filterOptions?: IFilterOptions<ITagFilters> | null;
+    sortOptions?: ISortOptions<TagSortField> | null;
     paginationOptions: IPaginationOptions;
   }): Promise<{ items: Tag[]; meta: PaginationMetaDto }> {
     // Repository now returns { items, meta } directly
@@ -187,6 +192,73 @@ export class TagsService {
 
   async decrementUsage(id: string): Promise<void> {
     await this.tagRepository.decrementUsageCount(id);
+  }
+
+  async findDeletedWithPagination({
+    filterOptions,
+    sortOptions,
+    paginationOptions,
+  }: {
+    filterOptions?: IFilterOptions<ITagFilters> | null;
+    sortOptions?: ISortOptions<TagSortField> | null;
+    paginationOptions: IPaginationOptions;
+  }): Promise<{ items: Tag[]; meta: PaginationMetaDto }> {
+    // Delegate to repository implementation
+    return await (this.tagRepository as any).findDeletedWithPagination({
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    });
+  }
+
+  async restore(slugOrId: string): Promise<Tag> {
+    // Try to find by slug first
+    let tag = await this.tagRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!tag) {
+      tag = await this.tagRepository.findById(slugOrId);
+    }
+
+    if (!tag) {
+      throw new NotFoundException(`Tag with identifier ${slugOrId} not found`);
+    }
+
+    // Call repository restore if available
+    if (typeof (this.tagRepository as any).restore === 'function') {
+      await (this.tagRepository as any).restore(tag.id);
+    } else {
+      // Fallback: nothing, as soft-deleted state cannot be changed otherwise
+      throw new ForbiddenException(
+        'Restore operation not supported by repository',
+      );
+    }
+
+    const reloaded = await this.tagRepository.findById(tag.id);
+    if (!reloaded) throw new NotFoundException('Tag not found after restore');
+    return reloaded;
+  }
+
+  async hardDelete(slugOrId: string): Promise<void> {
+    // Try to find by slug first
+    let tag = await this.tagRepository.findBySlug(slugOrId);
+
+    // If not found by slug, try by ID
+    if (!tag) {
+      tag = await this.tagRepository.findById(slugOrId);
+    }
+
+    if (!tag) {
+      throw new NotFoundException(`Tag with identifier ${slugOrId} not found`);
+    }
+
+    // Call repository hardDelete
+    if (typeof (this.tagRepository as any).hardDelete === 'function') {
+      await (this.tagRepository as any).hardDelete(tag.id);
+    } else {
+      // Fallback to remove (soft delete)
+      await this.tagRepository.remove(tag.id);
+    }
   }
 
   private normalizeTagName(name: string): {

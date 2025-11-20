@@ -3,11 +3,14 @@ import { PaginationMetaDto } from '../../../utils/dto/pagination-response.dto';
 import {
   IFilterOptions,
   IPaginationOptions,
-  ISearchOptions,
   ISortOptions,
 } from '../../../utils/types/pagination-options';
 import { Template } from '../../domain/template';
 import { CreateTemplateDto } from '../../dto/create-template.dto';
+import {
+  ITemplateFilters,
+  TemplateSortField,
+} from '../../dto/template-filter-options.dto';
 import { TemplateEntity } from './relational/entities/template.entity';
 
 export abstract class TemplateRepository {
@@ -20,15 +23,21 @@ export abstract class TemplateRepository {
   abstract getByTitle(title: string): Promise<TemplateEntity | null>;
   abstract getById(id: string): Promise<TemplateEntity | null>;
   abstract findBySlug(slug: string): Promise<TemplateEntity | null>;
-  abstract findManyWithPagination(
-    options: IPaginationOptions &
-      ISortOptions<TemplateEntity> &
-      IFilterOptions<TemplateEntity> &
-      ISearchOptions,
-  ): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }>;
+  abstract findManyWithPagination(options: {
+    paginationOptions: IPaginationOptions;
+    sortOptions?: ISortOptions<TemplateSortField>;
+    filterOptions?: IFilterOptions<ITemplateFilters> | null;
+  }): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }>;
   abstract update(updateData: Partial<TemplateEntity>, id: Template['id']);
 
   abstract softDelete(id: Template['id']);
+  abstract findDeletedWithPagination(options: {
+    paginationOptions: IPaginationOptions;
+    sortOptions?: ISortOptions<TemplateSortField>;
+    filterOptions?: IFilterOptions<ITemplateFilters> | null;
+  }): Promise<{ items: TemplateEntity[]; meta: PaginationMetaDto }>;
+  abstract restore(id: Template['id']): Promise<void>;
+  abstract hardDelete(id: Template['id']): Promise<void>;
 
   abstract getMemeCountByTemplateId(templateId: string): Promise<number>;
 }

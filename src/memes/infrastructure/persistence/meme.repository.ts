@@ -1,12 +1,13 @@
 import { PaginationMetaDto } from '../../../utils/dto/pagination-response.dto';
 import { NullableType } from '../../../utils/types/nullable.type';
-import { IPaginationOptions } from '../../../utils/types/pagination-options';
+import {
+  IFilterOptions,
+  IPaginationOptions,
+  ISortOptions,
+} from '../../../utils/types/pagination-options';
 import { Meme } from '../../domain/meme';
 import { CreateMemeDto } from '../../dto/create-meme.dto';
-import {
-  MemeFilterOptionsDto,
-  MemeSortOptionsDto,
-} from '../../dto/meme-filter-options.dto';
+import { IMemeFilters, MemeSortField } from '../../dto/meme-filter-options.dto';
 
 export abstract class MemesRepository {
   abstract create(data: Meme | CreateMemeDto): Promise<Meme>;
@@ -16,8 +17,8 @@ export abstract class MemesRepository {
     paginationOptions,
     currentUserId,
   }: {
-    filterOptions?: MemeFilterOptionsDto | null;
-    sortOptions?: MemeSortOptionsDto;
+    filterOptions?: IFilterOptions<IMemeFilters> | null;
+    sortOptions?: ISortOptions<MemeSortField>;
     paginationOptions: IPaginationOptions;
     currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
@@ -36,10 +37,38 @@ export abstract class MemesRepository {
   abstract findByAuthorId(
     userId: string,
     args: {
-      filterOptions?: MemeFilterOptionsDto | null;
-      sortOptions?: MemeSortOptionsDto;
+      filterOptions?: IFilterOptions<IMemeFilters> | null;
+      sortOptions?: ISortOptions<MemeSortField>;
       paginationOptions: IPaginationOptions;
       currentUserId?: string;
     },
   ): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
+
+  // New: pagination for soft-deleted memes
+  abstract findDeletedWithPagination({
+    filterOptions,
+    sortOptions,
+    paginationOptions,
+  }: {
+    filterOptions?: IFilterOptions<IMemeFilters> | null;
+    sortOptions?: ISortOptions<MemeSortField>;
+    paginationOptions: IPaginationOptions;
+  }): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
+
+  // New: list soft-deleted memes by author
+  abstract findByAuthorIdDeleted(
+    userId: string,
+    args: {
+      filterOptions?: IFilterOptions<IMemeFilters> | null;
+      sortOptions?: ISortOptions<MemeSortField>;
+      paginationOptions: IPaginationOptions;
+      currentUserId?: string;
+    },
+  ): Promise<{ items: Meme[]; meta: PaginationMetaDto }>;
+
+  // New: restore a soft-deleted meme
+  abstract restore(id: string): Promise<void>;
+
+  // New: permanently delete a meme
+  abstract hardDelete(id: string): Promise<any>;
 }

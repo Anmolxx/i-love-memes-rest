@@ -1,53 +1,38 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { ArrayNotEmpty, IsEnum, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEnum, IsOptional } from 'class-validator';
+import { BaseQueryDto } from '../../utils/dto/base-query.dto';
 
+/**
+ * Template-specific sort fields enum
+ * Defines all sortable fields for template queries
+ */
 export enum TemplateSortField {
   CREATED_AT = 'createdAt',
   UPDATED_AT = 'updatedAt',
   TITLE = 'title',
 }
 
-export class TemplateFilterDto {
-  @ApiPropertyOptional({
-    description: 'Search term for template title/description',
-    type: String,
-    example: 'funny',
-  })
-  @IsOptional()
-  @IsString()
-  search?: string;
+/**
+ * Template-specific filter properties
+ * (Currently empty - templates only use common filters: search, tags)
+ */
+export type ITemplateFilters = Record<string, never>;
 
-  @ApiPropertyOptional({
-    description: 'Tags to filter memes',
-    type: [String],
-  })
-  @IsOptional()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  @Type(() => String)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.split(',').map((v) => v.trim()) : value,
-  )
-  tags?: string[];
-}
-
-export class SortTemplateDto {
+/**
+ * Comprehensive template query DTO
+ * Extends BaseQueryDto with template-specific filters
+ * Provides: page, limit, search, tags, orderBy, order
+ */
+export class TemplateQueryDto extends BaseQueryDto {
   @ApiPropertyOptional({
     enum: TemplateSortField,
     description: 'Field to sort templates by',
+    default: TemplateSortField.CREATED_AT,
     example: TemplateSortField.CREATED_AT,
   })
   @IsOptional()
   @IsEnum(TemplateSortField)
+  @Type(() => String)
   orderBy?: TemplateSortField;
-
-  @ApiPropertyOptional({
-    enum: ['ASC', 'DESC'],
-    description: 'Sort order',
-    example: 'DESC',
-  })
-  @IsOptional()
-  @IsEnum(['ASC', 'DESC'])
-  order?: 'ASC' | 'DESC';
 }

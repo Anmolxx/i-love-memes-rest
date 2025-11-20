@@ -23,4 +23,12 @@ export class FilesService {
   deleteById(id: FileType['id']) {
     return this.fileRepository.deleteById(id);
   }
+
+  hardDelete(id: FileType['id']) {
+    return this.fileRepository.hardDelete(id);
+  }
+
+  getFilePath(entity: FileType): Promise<NullableType<string>> {
+    return this.fileRepository.getFilePath(entity);
+  }
 }

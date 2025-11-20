@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { RoleEnum } from 'src/roles/roles.enum';
 import { TagRepository } from 'src/tags/infrastructure/persistence/tag.repository';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 import { TagsService } from '../tags/tags.service';
@@ -13,11 +14,16 @@ import {
   isUUID,
 } from '../utils/slug.util';
 import {
+  IFilterOptions,
   IPaginationOptions,
   ISortOptions,
 } from '../utils/types/pagination-options';
 import { Template } from './domain/template';
 import { CreateTemplateDto } from './dto/create-template.dto';
+import {
+  ITemplateFilters,
+  TemplateSortField,
+} from './dto/template-filter-options.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { TemplateEntity } from './infrastructure/persistence/relational/entities/template.entity';
 import { TemplateMapper } from './infrastructure/persistence/relational/mapper/template.mapper';
@@ -121,24 +127,17 @@ export class TemplateService {
 
   async getAll(options: {
     paginationOptions: IPaginationOptions;
-    sortOptions: ISortOptions<TemplateEntity>;
-    search?: string;
-    filterOptions?: {
-      search?: string;
-      tags?: string[];
-    };
+    sortOptions?: ISortOptions<TemplateSortField>;
+    filterOptions?: IFilterOptions<ITemplateFilters>;
   }) {
     const { paginationOptions, sortOptions, filterOptions } = options;
 
-    const repoOptions: any = {
-      ...paginationOptions,
-      ...sortOptions,
-      search: filterOptions?.search,
-      tags: filterOptions?.tags,
-    };
-
     const { items: entities, meta } =
-      await this.templateRepository.findManyWithPagination(repoOptions);
+      await this.templateRepository.findManyWithPagination({
+        paginationOptions,
+        sortOptions,
+        filterOptions,
+      });
 
     const items = await Promise.all(
       entities.map(async (e) => {
@@ -259,5 +258,71 @@ export class TemplateService {
     }
 
     await this.templateRepository.softDelete(template.id);
+  }
+
+  async findDeletedWithPagination(options: {
+    paginationOptions: IPaginationOptions;
+    sortOptions?: ISortOptions<TemplateSortField>;
+    filterOptions?: IFilterOptions<ITemplateFilters>;
+  }) {
+    // Delegate to repository with structured options
+    return await this.templateRepository.findDeletedWithPagination({
+      paginationOptions: options.paginationOptions,
+      sortOptions: options.sortOptions,
+      filterOptions: options.filterOptions,
+    });
+  }
+
+  async restore(slugOrId: string, user: JwtPayloadType) {
+    // Try to find including deleted
+    let template = await this.templateRepository.findBySlug(slugOrId);
+    if (!template && isUUID(slugOrId)) {
+      template = await this.templateRepository.getById(slugOrId);
+    }
+
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    const isOwner = template.author?.id === user.id;
+    const isAdmin = (user as any)?.role?.name === RoleEnum.admin;
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException(
+        'You are not allowed to restore this template',
+      );
+    }
+
+    // Call repository restore
+    if (typeof this.templateRepository.restore === 'function') {
+      await this.templateRepository.restore(template.id);
+    } else {
+      await this.templateRepository.update(
+        { ...template, deletedAt: undefined } as any,
+        template.id,
+      );
+    }
+
+    const reloaded = await this.templateRepository.getById(template.id);
+    return reloaded;
+  }
+
+  async hardDelete(slugOrId: string) {
+    let template = await this.templateRepository.findBySlug(slugOrId);
+    if (!template && isUUID(slugOrId)) {
+      template = await this.templateRepository.getById(slugOrId);
+    }
+
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    // Admin-only enforced at controller via RolesGuard
+    // Call repository hardDelete
+    if (typeof this.templateRepository.hardDelete === 'function') {
+      await this.templateRepository.hardDelete(template.id);
+    } else {
+      await this.templateRepository.softDelete(template.id);
+    }
   }
 }

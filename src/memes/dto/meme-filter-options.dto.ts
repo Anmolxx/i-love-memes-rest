@@ -1,7 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { ArrayNotEmpty, IsEnum, IsOptional, IsString } from 'class-validator';
+import { BaseQueryDto } from '../../utils/dto/base-query.dto';
 
+/**
+ * Meme-specific sort fields enum
+ * Defines all sortable fields for meme queries
+ */
 export enum MemeSortField {
   CREATED_AT = 'createdAt',
   UPDATED_AT = 'updatedAt',
@@ -13,65 +18,47 @@ export enum MemeSortField {
   SCORE = 'score',
 }
 
-export class MemeFilterOptionsDto {
-  @ApiPropertyOptional({
-    description: 'Search term for meme title/content',
-    type: String,
-  })
-  @IsOptional()
-  @IsString()
-  search?: string;
+/**
+ * Meme-specific filter properties
+ */
+export interface IMemeFilters {
+  templateIds?: string[];
+}
 
+/**
+ * Comprehensive meme query DTO
+ * Extends BaseQueryDto with meme-specific filters
+ * Provides: page, limit, search, tags, orderBy, order, and templateIds
+ */
+export class MemeQueryDto extends BaseQueryDto {
   @ApiPropertyOptional({
-    description: 'Tags to filter memes',
-    type: [String],
+    enum: MemeSortField,
+    description: 'Field to sort memes by',
+    default: MemeSortField.TRENDING,
   })
   @IsOptional()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
+  @IsEnum(MemeSortField)
   @Type(() => String)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.split(',').map((v) => v.trim()) : value,
-  )
-  tags?: string[];
+  orderBy?: MemeSortField;
 
   @ApiPropertyOptional({
     description: 'Template IDs to filter memes',
     type: [String],
+    isArray: true,
   })
   @IsOptional()
   @ArrayNotEmpty()
   @IsString({ each: true })
   @Type(() => String)
   @Transform(({ value }) =>
-    typeof value === 'string' ? value.split(',').map((v) => v.trim()) : value,
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : Array.isArray(value)
+        ? value.map((v) => String(v).trim()).filter(Boolean)
+        : value,
   )
   templateIds?: string[];
-}
-
-export class MemeSortOptionsDto {
-  @ApiPropertyOptional({
-    enum: MemeSortField,
-    description: 'Field to sort memes by',
-  })
-  @IsOptional()
-  @IsEnum(MemeSortField)
-  orderBy?: MemeSortField;
-
-  @ApiPropertyOptional({
-    enum: ['ASC', 'DESC'],
-    description: 'Sort order',
-  })
-  @IsOptional()
-  @IsEnum(['ASC', 'DESC'])
-  order?: 'ASC' | 'DESC';
-}
-
-export function isMemeFilterOptionsDto(obj: any): obj is MemeFilterOptionsDto {
-  return (
-    obj &&
-    (typeof obj.search === 'string' || obj.search === undefined) &&
-    (Array.isArray(obj.tags) || obj.tags === undefined) &&
-    (Array.isArray(obj.templateIds) || obj.templateIds === undefined)
-  );
 }

@@ -20,7 +20,6 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { API_PAGE_LIMIT } from '../constants/common.constant';
 import { createPaginatedResponse } from 'src/utils/base-response';
 import { PaginatedResponse } from 'src/utils/dto/pagination-response.dto';
 import { Roles } from '../roles/roles.decorator';
@@ -29,12 +28,10 @@ import { RolesGuard } from '../roles/roles.guard';
 import { Tag } from './domain/tag';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { FindOrCreateTagsDto } from './dto/find-or-create-tags.dto';
-import {
-  TagFilterOptionsDto,
-  TagSortOptionsDto,
-} from './dto/tag-filter-options.dto';
+import { TagQueryDto, TagSortField } from './dto/tag-filter-options.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { TagsService } from './tags.service';
+import { extractQueryOptions, API_PAGE_LIMIT } from 'src/utils';
 
 @ApiTags('Tags')
 @Controller({
@@ -76,23 +73,14 @@ export class TagsController {
     description: 'Number of items per page',
   })
   @HttpCode(HttpStatus.OK)
-  async findAll(
-    @Query() filterOptions: TagFilterOptionsDto,
-    @Query() sortOptions: TagSortOptionsDto,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const safePage = page ?? 1;
-    let safeLimit = limit ?? 10;
-    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+  async findAll(@Query() query: TagQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<TagSortField>(query, API_PAGE_LIMIT);
 
     const { items, meta } = await this.tagsService.findManyWithPagination({
       filterOptions,
       sortOptions,
-      paginationOptions: {
-        page: safePage,
-        limit: safeLimit,
-      },
+      paginationOptions,
     });
 
     return createPaginatedResponse('tags fetched successfully', items, meta);
@@ -141,5 +129,49 @@ export class TagsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('slugOrId') slugOrId: string): Promise<void> {
     return this.tagsService.remove(slugOrId);
+  }
+
+  @ApiOkResponse({ type: PaginatedResponse(Tag) })
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Get('deleted')
+  @HttpCode(HttpStatus.OK)
+  async findDeleted(@Query() query: TagQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<TagSortField>(query, API_PAGE_LIMIT);
+
+    const { items, meta } = await this.tagsService.findDeletedWithPagination({
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'Deleted tags fetched successfully',
+      items,
+      meta,
+    );
+  }
+
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Patch(':slugOrId/restore')
+  @ApiParam({ name: 'slugOrId', type: String, required: true })
+  @HttpCode(HttpStatus.OK)
+  async restore(@Param('slugOrId') slugOrId: string) {
+    const restored = await this.tagsService.restore(slugOrId);
+    return restored;
+  }
+
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Delete(':slugOrId/permanent')
+  @ApiParam({ name: 'slugOrId', type: String, required: true })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async hardDelete(@Param('slugOrId') slugOrId: string) {
+    await this.tagsService.hardDelete(slugOrId);
   }
 }

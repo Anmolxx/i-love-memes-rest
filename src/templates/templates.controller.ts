@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -16,22 +17,32 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
+import { Meme } from 'src/memes/domain/meme';
+import { CreateTemplateResponseDto } from 'src/templates/dto/response/create-template.response.dto';
+import {
+  API_PAGE_LIMIT,
+  extractQueryOptions,
+  IPaginationOptions,
+} from 'src/utils';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
-import { API_PAGE_LIMIT } from '../constants/common.constant';
+import { Roles } from '../roles/roles.decorator';
+import { RoleEnum } from '../roles/roles.enum';
+import { RolesGuard } from '../roles/roles.guard';
 import {
   createPaginatedResponse,
   createResponse,
 } from '../utils/base-response';
 import { PaginatedResponse } from '../utils/dto/pagination-response.dto';
-import { IPaginationOptions } from '../utils/types/pagination-options';
 import { Template } from './domain/template';
 import { CreateTemplateDto } from './dto/create-template.dto';
-import { CreateTemplateResponseDto } from './dto/response/create-template.response.dto';
-import { TemplateSortField } from './dto/template-filter-options.dto';
+import {
+  TemplateQueryDto,
+  TemplateSortField,
+} from './dto/template-filter-options.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { TemplateService } from './templates.service';
 
@@ -56,97 +67,20 @@ export class TemplateController {
     return createResponse('Template Created Successfully', result);
   }
 
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
+  @SerializeOptions({ groups: ['admin', 'user'] })
+  @ApiBearerAuth()
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  @ApiOkResponse({ type: PaginatedResponse(Template) })
   @HttpCode(HttpStatus.OK)
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number for pagination',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-    example: 10,
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description:
-      'Search term for template title/description (partial, case-insensitive)',
-    example: 'funny',
-  })
-  @ApiQuery({
-    name: 'tags',
-    required: false,
-    type: Array<string>,
-    description: 'Filter templates by tags (comma-separated tag names)',
-    example: 'funny',
-  })
-  @ApiQuery({
-    name: 'orderBy',
-    required: false,
-    enum: ['createdAt', 'updatedAt', 'title'],
-    description: 'Field to sort templates by',
-    example: 'createdAt',
-  })
-  @ApiQuery({
-    name: 'order',
-    required: false,
-    enum: ['ASC', 'DESC'],
-    description: 'Sort direction',
-    example: 'DESC',
-  })
-  async getAll(
-    @Query('search') search?: string,
-    @Query('tags') tags?: Array<string>,
-    @Query('orderBy') orderBy?: TemplateSortField,
-    @Query('order') order?: 'ASC' | 'DESC',
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const safePage = page ?? 1;
-    let safeLimit = limit ?? 10;
-    if (safeLimit > API_PAGE_LIMIT) {
-      safeLimit = API_PAGE_LIMIT;
-    }
-
-    const sortOrder = order ?? 'DESC';
-    const sortField = orderBy ?? TemplateSortField.CREATED_AT;
-
-    // Parse tags if provided
-    let parsedTags: Array<string> | undefined;
-
-    switch (typeof tags) {
-      case 'string':
-        parsedTags = (tags as string).split(',').map((tag) => tag.trim());
-        break;
-      case 'object':
-        parsedTags = tags;
-        break;
-      default:
-        parsedTags = undefined;
-        break;
-    }
+  async getAll(@Query() query: TemplateQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<TemplateSortField>(query, API_PAGE_LIMIT);
 
     const { items, meta } = await this.templateService.getAll({
-      paginationOptions: {
-        page: safePage,
-        limit: safeLimit,
-      } as IPaginationOptions,
-      sortOptions: {
-        orderBy: sortField,
-        order: sortOrder as 'ASC' | 'DESC',
-      },
-      filterOptions: {
-        search: search,
-        tags: parsedTags,
-      },
+      paginationOptions,
+      sortOptions,
+      filterOptions,
     });
 
     return createPaginatedResponse(
@@ -189,5 +123,58 @@ export class TemplateController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('slugOrId') slugOrId: string) {
     await this.templateService.delete(slugOrId);
+  }
+
+  @ApiOkResponse({ type: PaginatedResponse(Template) })
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Get('deleted')
+  @HttpCode(HttpStatus.OK)
+  async getDeleted(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+  ) {
+    const safePage = page ?? 1;
+    let safeLimit = limit ?? 10;
+    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
+
+    const { items, meta } =
+      await this.templateService.findDeletedWithPagination({
+        paginationOptions: {
+          page: safePage,
+          limit: safeLimit,
+        } as IPaginationOptions,
+        sortOptions: { orderBy: 'createdAt', order: 'DESC' },
+        filterOptions: { search },
+      } as any);
+
+    return createPaginatedResponse(
+      'Deleted templates fetched successfully',
+      items,
+      meta,
+    );
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':slugOrId/restore')
+  @HttpCode(HttpStatus.OK)
+  async restore(
+    @Param('slugOrId') slugOrId: string,
+    @CurrentUser() user: JwtPayloadType,
+  ) {
+    const restored = await this.templateService.restore(slugOrId, user);
+    return createResponse('Template restored successfully', restored);
+  }
+
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Delete(':slugOrId/permanent')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async hardDelete(@Param('slugOrId') slugOrId: string) {
+    await this.templateService.hardDelete(slugOrId);
   }
 }

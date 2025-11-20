@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Tag } from 'src/tags/domain/tag';
-import { NullableType } from 'src/utils/types/nullable.type';
-import { IPaginationOptions } from 'src/utils/types/pagination-options';
+import { ITagFilters, TagSortField } from 'src/tags/dto/tag-filter-options.dto';
 import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
+import { NullableType } from 'src/utils/types/nullable.type';
+import {
+  IFilterOptions,
+  IPaginationOptions,
+  ISortOptions,
+} from 'src/utils/types/pagination-options';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
+import { MemeTagEntity } from '../entities/meme-tag.entity';
 
 import { TagEntity } from '../entities/tag.entity';
-import { MemeTagEntity } from '../entities/meme-tag.entity';
 import { TemplateTagEntity } from '../entities/template-tag.entity';
 import { TagMapper } from '../mapper/tag.mapper';
 import { TagRepository } from './tag.repository';
-import {
-  TagFilterOptionsDto,
-  TagSortOptionsDto,
-  TagSortField,
-} from 'src/tags/dto/tag-filter-options.dto';
 
 @Injectable()
 export class TagRelationalRepository implements TagRepository {
@@ -43,8 +43,8 @@ export class TagRelationalRepository implements TagRepository {
     sortOptions,
     paginationOptions,
   }: {
-    filterOptions?: TagFilterOptionsDto | null;
-    sortOptions?: TagSortOptionsDto | null;
+    filterOptions?: IFilterOptions<ITagFilters> | null;
+    sortOptions?: ISortOptions<TagSortField> | null;
     paginationOptions: IPaginationOptions;
   }): Promise<{ items: Tag[]; meta: PaginationMetaDto }> {
     const qb = this.tagRepository.createQueryBuilder('tag');
@@ -81,7 +81,7 @@ export class TagRelationalRepository implements TagRepository {
    */
   private applyFilters(
     qb: SelectQueryBuilder<TagEntity>,
-    filterOptions?: TagFilterOptionsDto | null,
+    filterOptions?: IFilterOptions<ITagFilters> | null,
   ): void {
     // Always filter out soft-deleted records
     qb.andWhere('tag.deletedAt IS NULL');
@@ -111,7 +111,7 @@ export class TagRelationalRepository implements TagRepository {
    */
   private applySorting(
     qb: SelectQueryBuilder<TagEntity>,
-    sortOptions?: TagSortOptionsDto | null,
+    sortOptions?: ISortOptions<TagSortField> | null,
   ): void {
     const orderBy = sortOptions?.orderBy || TagSortField.CREATED_AT;
     const order = sortOptions?.order || 'DESC';
@@ -194,6 +194,49 @@ export class TagRelationalRepository implements TagRepository {
 
   async remove(id: Tag['id']): Promise<void> {
     await this.tagRepository.softDelete(id);
+  }
+
+  async findDeletedWithPagination({
+    filterOptions,
+    sortOptions,
+    paginationOptions,
+  }: {
+    filterOptions?: IFilterOptions<ITagFilters> | null;
+    sortOptions?: ISortOptions<TagSortField> | null;
+    paginationOptions: IPaginationOptions;
+  }): Promise<{ items: Tag[]; meta: PaginationMetaDto }> {
+    const qb = this.tagRepository.createQueryBuilder('tag');
+
+    qb.withDeleted();
+    qb.andWhere('tag.deletedAt IS NOT NULL');
+
+    this.applyFilters(qb, filterOptions);
+    this.applySorting(qb, sortOptions);
+
+    qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
+      paginationOptions.limit,
+    );
+
+    const [entities, total] = await qb.getManyAndCount();
+
+    const items = entities.map((entity) => TagMapper.toDomain(entity));
+
+    const meta: PaginationMetaDto = {
+      totalItems: total,
+      totalPages: Math.ceil(total / paginationOptions.limit) || 1,
+      currentPage: paginationOptions.page,
+      limit: paginationOptions.limit,
+    };
+
+    return { items, meta };
+  }
+
+  async restore(id: Tag['id']): Promise<void> {
+    await this.tagRepository.restore(id);
+  }
+
+  async hardDelete(id: Tag['id']): Promise<void> {
+    await this.tagRepository.delete(id);
   }
 
   async incrementUsageCount(id: Tag['id']): Promise<void> {
