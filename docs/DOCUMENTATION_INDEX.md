@@ -30,6 +30,23 @@
    - Code quality metrics
    - Deployment readiness
 
+5. **UNIFIED_QUERY_SYSTEM.md** - Enterprise query system documentation
+   - Architecture overview
+   - Core components and types
+   - Standard query parameters
+   - Usage guide for all resources
+   - Migration guide
+   - Type safety and generics
+   - Best practices
+
+6. **QUERY_QUICK_REFERENCE.md** - Quick query reference
+   - Common query patterns
+   - API examples for all resources
+   - Sort field reference
+   - Controller patterns
+   - Response formats
+   - Error handling
+
 ---
 
 ### User Module Documentation
