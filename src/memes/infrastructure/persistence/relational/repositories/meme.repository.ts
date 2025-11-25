@@ -357,8 +357,14 @@ export class MemesRelationalRepository implements MemesRepository {
     filterOptions?: IFilterOptions<IMemeFilters> | null,
     enforceAudiencePublic?: boolean,
   ): void {
-    // Always filter out soft-deleted records
-    qb.andWhere('meme.deletedAt IS NULL');
+    // Only filter out soft-deleted records when the query builder does not
+    // explicitly include deleted rows (i.e. .withDeleted() was NOT called).
+    // This prevents contradictory WHERE clauses like "deletedAt IS NOT NULL AND deletedAt IS NULL"
+    // when callers intentionally requested deleted records via qb.withDeleted().
+    // NOTE: TypeORM sets qb.expressionMap.withDeleted when .withDeleted() is used.
+    if (!qb.expressionMap || !qb.expressionMap.withDeleted) {
+      qb.andWhere('meme.deletedAt IS NULL');
+    }
 
     if (enforceAudiencePublic) {
       qb.andWhere('meme.audience = :audience', {
