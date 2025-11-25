@@ -72,12 +72,13 @@ export class MemesController {
     // Admin-only filters: reported, interactionType, reasons
     if (
       filterOptions?.reported === true ||
+      filterOptions?.flagged === true ||
       Boolean(filterOptions?.interactionType) ||
       (filterOptions?.reasons && filterOptions.reasons.length > 0)
     ) {
       if (!user || user?.role?.name?.toLowerCase() !== 'admin') {
         throw new ForbiddenException(
-          'Only admins can use moderation filters (reported/interactionType/reasons)',
+          'Only admins can use moderation filters (reported/interactionType/reasons/flagged)',
         );
       }
     }
@@ -108,12 +109,13 @@ export class MemesController {
     // Admin-only filters: reported, interactionType, reasons
     if (
       filterOptions?.reported === true ||
+      filterOptions?.flagged === true ||
       Boolean(filterOptions?.interactionType) ||
       (filterOptions?.reasons && filterOptions.reasons.length > 0)
     ) {
       if (!user || user?.role?.name?.toLowerCase() !== 'admin') {
         throw new ForbiddenException(
-          'Only admins can use moderation filters (reported/interactionType/reasons)',
+          'Only admins can use moderation filters (reported/interactionType/reasons/flagged)',
         );
       }
     }
@@ -155,6 +157,7 @@ export class MemesController {
     );
   }
 
+  @ApiBearerAuth()
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
   @SerializeOptions({ groups: ['admin'] })
   @UseGuards(AuthGuard('jwt'))
@@ -179,6 +182,7 @@ export class MemesController {
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
   @SerializeOptions({ groups: ['admin'] })
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('me/deleted')
   @HttpCode(HttpStatus.OK)

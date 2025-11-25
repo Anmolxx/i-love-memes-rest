@@ -34,6 +34,7 @@ export enum MemeSortField {
 export interface IMemeFilters {
   templateIds?: string[];
   reported?: boolean;
+  flagged?: boolean;
   interactionType?: InteractionType;
   reasons?: ReportReason[];
 }
@@ -84,6 +85,16 @@ export class MemeQueryDto extends BaseQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   reported?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'When true, return only memes that have at least one FLAG interaction. Admin-only filter.',
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  flagged?: boolean;
 
   @ApiPropertyOptional({
     description:

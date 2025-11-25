@@ -390,15 +390,6 @@ export class MemesRelationalRepository implements MemesRepository {
         qb.andWhere(
           `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'REPORT')`,
         );
-        // Filter by a generic interaction type (REPORT, FLAG, UPVOTE, DOWNVOTE)
-        if (filterOptions?.interactionType) {
-          qb.andWhere(
-            `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionTypeFilter)`,
-          ).setParameter(
-            'interactionTypeFilter',
-            filterOptions.interactionType,
-          );
-        }
 
         // Filter by report reasons (implies REPORT interactions)
         if (filterOptions?.reasons && filterOptions.reasons.length > 0) {
@@ -407,6 +398,33 @@ export class MemesRelationalRepository implements MemesRepository {
           ).setParameter('reasonFilter', filterOptions.reasons);
         }
       }
+    }
+
+    // Filter by flagged status (admin-only filter enforced at controller level)
+    if (typeof filterOptions?.flagged === 'boolean') {
+      if (filterOptions.flagged) {
+        qb.andWhere(
+          `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'FLAG')`,
+        );
+      }
+    }
+
+    // Generic interactionType filter (works independently of reported/flagged booleans)
+    if (filterOptions?.interactionType) {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionTypeFilter)`,
+      ).setParameter('interactionTypeFilter', filterOptions.interactionType);
+    }
+
+    // Filter by reasons if provided without reported boolean (assume REPORT type)
+    if (
+      filterOptions?.reasons &&
+      filterOptions.reasons.length > 0 &&
+      typeof filterOptions?.reported !== 'boolean'
+    ) {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'REPORT' AND mi.reason IN (:...reasonFilter))`,
+      ).setParameter('reasonFilter', filterOptions.reasons);
     }
   }
 
