@@ -155,6 +155,50 @@ export class MemesController {
     );
   }
 
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
+  @SerializeOptions({ groups: ['admin'] })
+  @UseGuards(AuthGuard('jwt'))
+  @Get('deleted')
+  @HttpCode(HttpStatus.OK)
+  async findDeleted(@Query() query: MemeQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
+
+    const { items, meta } = await this.memesService.findDeletedWithPagination({
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'Deleted memes fetched successfully',
+      items,
+      meta,
+    );
+  }
+
+  @ApiOkResponse({ type: PaginatedResponse(Meme) })
+  @SerializeOptions({ groups: ['admin'] })
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/deleted')
+  @HttpCode(HttpStatus.OK)
+  async findMyDeleted(@CurrentUser() user: User, @Query() query: MemeQueryDto) {
+    const { paginationOptions, sortOptions, filterOptions } =
+      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
+
+    const { items, meta } = await this.memesService.findMyDeleted(user, {
+      filterOptions,
+      sortOptions,
+      paginationOptions,
+    });
+
+    return createPaginatedResponse(
+      'User deleted memes fetched successfully',
+      items,
+      meta,
+    );
+  }
+
   @ApiOkResponse({ type: Meme })
   @ApiBearerAuth()
   @UseGuards(OptionalJwtAuthGuard)
@@ -220,50 +264,6 @@ export class MemesController {
       success: true,
       message: 'Meme deleted successfully',
     };
-  }
-
-  @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin'] })
-  @UseGuards(AuthGuard('jwt'))
-  @Get('deleted')
-  @HttpCode(HttpStatus.OK)
-  async findDeleted(@Query() query: MemeQueryDto) {
-    const { paginationOptions, sortOptions, filterOptions } =
-      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
-
-    const { items, meta } = await this.memesService.findDeletedWithPagination({
-      filterOptions,
-      sortOptions,
-      paginationOptions,
-    });
-
-    return createPaginatedResponse(
-      'Deleted memes fetched successfully',
-      items,
-      meta,
-    );
-  }
-
-  @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin'] })
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me/deleted')
-  @HttpCode(HttpStatus.OK)
-  async findMyDeleted(@CurrentUser() user: User, @Query() query: MemeQueryDto) {
-    const { paginationOptions, sortOptions, filterOptions } =
-      extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
-
-    const { items, meta } = await this.memesService.findMyDeleted(user, {
-      filterOptions,
-      sortOptions,
-      paginationOptions,
-    });
-
-    return createPaginatedResponse(
-      'User deleted memes fetched successfully',
-      items,
-      meta,
-    );
   }
 
   @ApiOkResponse({ type: Meme })
