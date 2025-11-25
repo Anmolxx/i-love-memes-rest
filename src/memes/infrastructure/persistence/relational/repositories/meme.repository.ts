@@ -1,26 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Meme } from 'src/memes/domain/meme';
 import {
   IMemeFilters,
   MemeSortField,
 } from 'src/memes/dto/meme-filter-options.dto';
-import {
-  IFilterOptions,
-  ISortOptions,
-} from 'src/utils/types/pagination-options';
+import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
+import { MemeEntity } from 'src/memes/infrastructure/persistence/relational/entities/meme.entity';
+import { MemeMapper } from 'src/memes/infrastructure/persistence/relational/mapper/meme.mapper';
 import {
   ALLTIME_MEME_SCORING_CONFIG,
   DEFAULT_MEME_SCORING_CONFIG,
   MemeScoringConfig,
   TRENDING_MEME_SCORING_CONFIG,
 } from 'src/memes/meme-scoring.config';
-import { Repository, SelectQueryBuilder, DeleteResult } from 'typeorm';
-import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
-import { Meme } from 'src/memes/domain/meme';
 import { MemeAudience } from 'src/memes/memes.enum';
-import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
-import { MemeEntity } from 'src/memes/infrastructure/persistence/relational/entities/meme.entity';
-import { MemeMapper } from 'src/memes/infrastructure/persistence/relational/mapper/meme.mapper';
+import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
+import {
+  IFilterOptions,
+  ISortOptions,
+} from 'src/utils/types/pagination-options';
+import { DeleteResult, Repository, SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
 export class MemesRelationalRepository implements MemesRepository {
@@ -382,6 +382,31 @@ export class MemesRelationalRepository implements MemesRepository {
       qb.andWhere('meme.template IN (:...templateIds)', {
         templateIds: filterOptions.templateIds,
       });
+    }
+
+    // Filter by reported status (admin-only filter enforced at controller level)
+    if (typeof filterOptions?.reported === 'boolean') {
+      if (filterOptions.reported) {
+        qb.andWhere(
+          `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'REPORT')`,
+        );
+        // Filter by a generic interaction type (REPORT, FLAG, UPVOTE, DOWNVOTE)
+        if (filterOptions?.interactionType) {
+          qb.andWhere(
+            `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = :interactionTypeFilter)`,
+          ).setParameter(
+            'interactionTypeFilter',
+            filterOptions.interactionType,
+          );
+        }
+
+        // Filter by report reasons (implies REPORT interactions)
+        if (filterOptions?.reasons && filterOptions.reasons.length > 0) {
+          qb.andWhere(
+            `EXISTS (SELECT 1 FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'REPORT' AND mi.reason IN (:...reasonFilter))`,
+          ).setParameter('reasonFilter', filterOptions.reasons);
+        }
+      }
     }
   }
 

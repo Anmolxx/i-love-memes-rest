@@ -268,7 +268,7 @@ export class MemesService {
     }
 
     const isOwner = meme.author?.id === user.id;
-    const isAdmin = user.role?.name === 'admin';
+    const isAdmin = user.role?.name?.toLowerCase() === 'admin';
 
     if (!isOwner && !isAdmin) {
       throw new ForbiddenException('You are not allowed to delete this Meme');
@@ -425,7 +425,7 @@ export class MemesService {
     }
 
     const isOwner = meme.author?.id === user.id;
-    const isAdmin = user.role?.name === 'admin';
+    const isAdmin = user.role?.name?.toLowerCase() === 'admin';
 
     if (!isOwner && !isAdmin) {
       throw new ForbiddenException('You are not allowed to restore this Meme');
@@ -465,7 +465,7 @@ export class MemesService {
       throw new NotFoundException('Meme not found');
     }
 
-    const isAdmin = user.role?.name === 'admin';
+    const isAdmin = user.role?.name?.toLowerCase() === 'admin';
     if (!isAdmin) {
       throw new ForbiddenException('Only admin can permanently delete memes');
     }

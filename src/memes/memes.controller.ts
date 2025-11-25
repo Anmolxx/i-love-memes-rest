@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -68,6 +69,19 @@ export class MemesController {
     const { paginationOptions, sortOptions, filterOptions } =
       extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
 
+    // Admin-only filters: reported, interactionType, reasons
+    if (
+      filterOptions?.reported === true ||
+      Boolean(filterOptions?.interactionType) ||
+      (filterOptions?.reasons && filterOptions.reasons.length > 0)
+    ) {
+      if (!user || user?.role?.name?.toLowerCase() !== 'admin') {
+        throw new ForbiddenException(
+          'Only admins can use moderation filters (reported/interactionType/reasons)',
+        );
+      }
+    }
+
     const { items, meta } = await this.memesService.findManyWithPagination({
       filterOptions,
       sortOptions,
@@ -90,6 +104,19 @@ export class MemesController {
   ) {
     const { paginationOptions, sortOptions, filterOptions } =
       extractQueryOptions<MemeSortField>(query, API_PAGE_LIMIT);
+
+    // Admin-only filters: reported, interactionType, reasons
+    if (
+      filterOptions?.reported === true ||
+      Boolean(filterOptions?.interactionType) ||
+      (filterOptions?.reasons && filterOptions.reasons.length > 0)
+    ) {
+      if (!user || user?.role?.name?.toLowerCase() !== 'admin') {
+        throw new ForbiddenException(
+          'Only admins can use moderation filters (reported/interactionType/reasons)',
+        );
+      }
+    }
 
     const { items, meta } = await this.memesService.findTopMemes({
       filterOptions,

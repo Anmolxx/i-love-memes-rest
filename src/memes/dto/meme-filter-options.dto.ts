@@ -1,6 +1,16 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { ArrayNotEmpty, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import {
+  InteractionType,
+  ReportReason,
+} from 'src/interactions/interactions.enum';
 import { BaseQueryDto } from '../../utils/dto/base-query.dto';
 
 /**
@@ -23,6 +33,9 @@ export enum MemeSortField {
  */
 export interface IMemeFilters {
   templateIds?: string[];
+  reported?: boolean;
+  interactionType?: InteractionType;
+  reasons?: ReportReason[];
 }
 
 /**
@@ -61,4 +74,46 @@ export class MemeQueryDto extends BaseQueryDto {
         : value,
   )
   templateIds?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      'When true, return only memes that have at least one REPORT interaction. Admin-only filter.',
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  reported?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter memes by interaction type (e.g. REPORT or FLAG). Admin-only filter.',
+    enum: InteractionType,
+  })
+  @IsOptional()
+  @IsEnum(InteractionType)
+  @Type(() => String)
+  interactionType?: InteractionType;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter memes by report reasons (comma separated or array). Implies type=REPORT when provided. Admin-only filter.',
+    enum: ReportReason,
+    isArray: true,
+  })
+  @IsOptional()
+  @ArrayNotEmpty()
+  @IsEnum(ReportReason, { each: true })
+  @Type(() => String)
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : Array.isArray(value)
+        ? value.map((v) => String(v).trim()).filter(Boolean)
+        : value,
+  )
+  reasons?: ReportReason[];
 }
