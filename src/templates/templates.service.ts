@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { MemesRepository } from 'src/memes/infrastructure/persistence/meme.repository';
 import { RoleEnum } from 'src/roles/roles.enum';
 import { TagRepository } from 'src/tags/infrastructure/persistence/tag.repository';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
@@ -33,6 +34,7 @@ import { TemplateRepository } from './infrastructure/persistence/template.reposi
 export class TemplateService {
   constructor(
     private readonly templateRepository: TemplateRepository,
+    private readonly memesRepository: MemesRepository,
     private readonly tagsService: TagsService,
     private readonly tagRepository: TagRepository,
   ) {}
@@ -275,9 +277,9 @@ export class TemplateService {
 
   async restore(slugOrId: string, user: JwtPayloadType) {
     // Try to find including deleted
-    let template = await this.templateRepository.findBySlug(slugOrId);
+    let template = await this.templateRepository.findBySlug(slugOrId, true);
     if (!template && isUUID(slugOrId)) {
-      template = await this.templateRepository.getById(slugOrId);
+      template = await this.templateRepository.getById(slugOrId, true);
     }
 
     if (!template) {
@@ -318,9 +320,32 @@ export class TemplateService {
     }
 
     // Admin-only enforced at controller via RolesGuard
-    // Call repository hardDelete
+    // Ensure memes referencing this template no longer reference it before hard delete
     if (typeof this.templateRepository.hardDelete === 'function') {
-      await this.templateRepository.hardDelete(template.id);
+      const memesRepoAny: any = this.memesRepository as any;
+
+      // If memes repository exposes the underlying TypeORM repository, use its manager to run a transaction
+      if (
+        memesRepoAny &&
+        memesRepoAny.memesRepository &&
+        memesRepoAny.memesRepository.manager
+      ) {
+        await memesRepoAny.memesRepository.manager.transaction(
+          async (manager) => {
+            // Clear references using the transactional manager
+            await this.memesRepository.clearTemplateReferences(
+              template.id,
+              manager,
+            );
+            // Delete template within same transaction
+            await manager.delete('template', { id: template.id });
+          },
+        );
+      } else {
+        // Fallback: call clearTemplateReferences without a transactional manager then call hardDelete
+        await this.memesRepository.clearTemplateReferences(template.id);
+        await this.templateRepository.hardDelete(template.id);
+      }
     } else {
       await this.templateRepository.softDelete(template.id);
     }

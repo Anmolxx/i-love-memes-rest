@@ -21,8 +21,14 @@ export abstract class TemplateRepository {
   ): Promise<TemplateEntity>;
 
   abstract getByTitle(title: string): Promise<TemplateEntity | null>;
-  abstract getById(id: string): Promise<TemplateEntity | null>;
-  abstract findBySlug(slug: string): Promise<TemplateEntity | null>;
+  abstract getById(
+    id: string,
+    withDeleted?: boolean,
+  ): Promise<TemplateEntity | null>;
+  abstract findBySlug(
+    slug: string,
+    withDeleted?: boolean,
+  ): Promise<TemplateEntity | null>;
   abstract findManyWithPagination(options: {
     paginationOptions: IPaginationOptions;
     sortOptions?: ISortOptions<TemplateSortField>;

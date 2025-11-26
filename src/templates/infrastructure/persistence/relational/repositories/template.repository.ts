@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
 import { JwtPayloadType } from 'src/auth/strategies/types/jwt-payload.type';
 import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
-import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
 import { IFilterOptions, IPaginationOptions, ISortOptions } from 'src/utils';
+import { PaginationMetaDto } from 'src/utils/dto/pagination-response.dto';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Template } from '../../../../domain/template';
 import { CreateTemplateDto } from '../../../../dto/create-template.dto';
 import {
@@ -43,15 +43,23 @@ export class TemplateRelationalRepository implements TemplateRepository {
     });
   }
 
-  async getById(id: string): Promise<TemplateEntity | null> {
+  async getById(
+    id: string,
+    withDeleted: boolean = false,
+  ): Promise<TemplateEntity | null> {
     return this.templateRepository.findOne({
       where: { id },
+      withDeleted,
     });
   }
 
-  async findBySlug(slug: string): Promise<TemplateEntity | null> {
+  async findBySlug(
+    slug: string,
+    withDeleted: boolean = false,
+  ): Promise<TemplateEntity | null> {
     return this.templateRepository.findOne({
       where: { slug },
+      withDeleted,
     });
   }
 
