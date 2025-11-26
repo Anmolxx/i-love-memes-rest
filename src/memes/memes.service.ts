@@ -261,6 +261,8 @@ export class MemesService {
     // If not found by slug, try by ID
     if (!meme && isUUID(slugOrId)) {
       meme = await this.memesRepository.findById(slugOrId);
+    } else {
+      throw new NotFoundException('ID format is invalid');
     }
 
     if (!meme) {
@@ -411,13 +413,17 @@ export class MemesService {
     let meme = await this.memesRepository.findBySlug(
       slugOrId,
       undefined /* currentUserId */,
+      true,
     );
 
     if (!meme && isUUID(slugOrId)) {
       meme = await this.memesRepository.findById(
         slugOrId,
         undefined /* currentUserId */,
+        true,
       );
+    } else {
+      throw new NotFoundException('ID format is invalid');
     }
 
     if (!meme) {
@@ -455,10 +461,10 @@ export class MemesService {
 
   async hardDelete(slugOrId: string, user: User): Promise<void> {
     // Try to find including deleted
-    let meme = await this.memesRepository.findBySlug(slugOrId, undefined);
+    let meme = await this.memesRepository.findBySlug(slugOrId, undefined, true);
 
     if (!meme && isUUID(slugOrId)) {
-      meme = await this.memesRepository.findById(slugOrId, undefined);
+      meme = await this.memesRepository.findById(slugOrId, undefined, true);
     }
 
     if (!meme) {
@@ -470,25 +476,44 @@ export class MemesService {
       throw new ForbiddenException('Only admin can permanently delete memes');
     }
 
-    // Remove file if exists
-    if (meme.file?.id) {
-      // Delete file record and storage if FilesService supports permanent delete
-      if (typeof this.filesService.hardDelete === 'function') {
-        await this.filesService.hardDelete(meme.file.id);
-      } else {
-        await this.filesService.updateStatus(
-          meme.file.id,
-          FileStatus.TEMPORARY,
-        );
+    // Call repository hard delete implementation.
+    // The relational implementation will delete the meme row first (DB cascades remove comments/interactions)
+    // and then delete the file DB row within the same transaction. The repo returns the deleted file metadata
+    // so we can remove the underlying storage after the transaction commits.
+    let fileMeta: { fileId?: string; filePath?: string } | any = {};
+    if (typeof this.memesRepository.hardDelete === 'function') {
+      fileMeta = await this.memesRepository.hardDelete(meme.id);
+    } else {
+      // Fallback: remove meme and then mark file as deleted
+      await this.memesRepository.remove(meme.id);
+      if (meme.file?.id) {
+        await this.filesService.updateStatus(meme.file.id, FileStatus.DELETED);
+        fileMeta = { fileId: meme.file.id, filePath: meme.file.path };
       }
     }
 
-    // Call repository hard delete implementation if available
-    if (typeof this.memesRepository.hardDelete === 'function') {
-      await this.memesRepository.hardDelete(meme.id);
-    } else {
-      // Fallback to TypeORM delete via update/remove - assume remove softDelete was used before
-      await this.memesRepository.remove(meme.id);
+    // After DB transaction: delete underlying storage for the file if present
+    const fileIdToDelete = fileMeta?.fileId;
+    if (fileIdToDelete) {
+      try {
+        if (typeof this.filesService.hardDelete === 'function') {
+          await this.filesService.hardDelete(fileIdToDelete);
+        } else {
+          // Best-effort: mark file as deleted if no hardDelete storage removal is available
+          await this.filesService.updateStatus(
+            fileIdToDelete,
+            FileStatus.DELETED,
+          );
+        }
+      } catch (err) {
+        // Log and continue; DB state is consistent (meme removed, file DB row removed)
+        // Consider enqueueing a retry/cleanup job here if desired
+        // eslint-disable-next-line no-console
+        console.error(
+          'Failed to remove file storage after meme hardDelete',
+          err,
+        );
+      }
     }
   }
 

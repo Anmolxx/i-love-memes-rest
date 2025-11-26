@@ -20,7 +20,7 @@ import {
   IFilterOptions,
   ISortOptions,
 } from 'src/utils/types/pagination-options';
-import { DeleteResult, Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
 export class MemesRelationalRepository implements MemesRepository {
@@ -84,12 +84,20 @@ export class MemesRelationalRepository implements MemesRepository {
     return { items, meta };
   }
 
-  async findById(id: Meme['id'], currentUserId?: string) {
-    return this.findOneWithInteractions({ id }, currentUserId);
+  async findById(
+    id: Meme['id'],
+    currentUserId?: string,
+    withDeleted: boolean = false,
+  ) {
+    return this.findOneWithInteractions({ id }, currentUserId, withDeleted);
   }
 
-  async findBySlug(slug: string, currentUserId?: string) {
-    return this.findOneWithInteractions({ slug }, currentUserId, true);
+  async findBySlug(
+    slug: string,
+    currentUserId?: string,
+    withDeleted: boolean = false,
+  ) {
+    return this.findOneWithInteractions({ slug }, currentUserId, withDeleted);
   }
 
   /**
@@ -334,8 +342,41 @@ export class MemesRelationalRepository implements MemesRepository {
   }
 
   // New: hardDelete
-  async hardDelete(id: string): Promise<DeleteResult> {
-    return await this.memesRepository.delete(id);
+  async hardDelete(
+    id: string,
+  ): Promise<{ fileId?: string; filePath?: string } | any> {
+    // Perform deletion in a transaction to ensure meme row is removed first
+    // so ON DELETE CASCADE removes comments and interactions, then remove file row
+    const result = await this.memesRepository.manager.connection.transaction(
+      async (manager) => {
+        // Load meme with file relation using the transactional manager
+        const meme = await manager.findOne(MemeEntity, {
+          where: { id },
+          relations: ['file'],
+          withDeleted: true,
+        });
+
+        if (!meme) {
+          // Nothing to delete
+          return { fileId: undefined };
+        }
+
+        const fileId = meme.file?.id;
+        const filePath = meme.file?.path;
+
+        // Delete meme first (triggers ON DELETE CASCADE for comments/interactions/meme_tags)
+        await manager.delete(MemeEntity, { id });
+
+        // If a file exists, delete its DB record as part of same transaction
+        if (fileId) {
+          await manager.delete('file', { id: fileId });
+        }
+
+        return { fileId, filePath };
+      },
+    );
+
+    return result;
   }
 
   /**
@@ -620,5 +661,18 @@ export class MemesRelationalRepository implements MemesRepository {
       });
       return entity;
     });
+  }
+
+  async clearTemplateReferences(
+    templateId: string,
+    transactionalEntityManager?: any,
+  ): Promise<void> {
+    const manager = transactionalEntityManager ?? this.memesRepository.manager;
+    await manager
+      .createQueryBuilder()
+      .update('memes')
+      .set({ template_id: null })
+      .where('template_id = :tid', { tid: templateId })
+      .execute();
   }
 }

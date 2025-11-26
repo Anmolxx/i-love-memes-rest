@@ -25,10 +25,12 @@ export abstract class MemesRepository {
   abstract findById(
     id: Meme['id'],
     currentUserId?: string,
+    withDeleted?: boolean,
   ): Promise<NullableType<Meme>>;
   abstract findBySlug(
     slug: string,
     currentUserId?: string,
+    withDeleted?: boolean,
   ): Promise<NullableType<Meme>>;
   abstract findByTitle(title: string): Promise<NullableType<Meme>>;
   abstract findByFileId(fileId: string): Promise<NullableType<Meme>>;
@@ -69,6 +71,14 @@ export abstract class MemesRepository {
   // New: restore a soft-deleted meme
   abstract restore(id: string): Promise<void>;
 
-  // New: permanently delete a meme
-  abstract hardDelete(id: string): Promise<any>;
+  // New: permanently delete a meme and optionally return deleted file metadata
+  abstract hardDelete(
+    id: string,
+  ): Promise<{ fileId?: string; filePath?: string } | any>;
+
+  // New: clear template references on memes that reference a template before template deletion
+  abstract clearTemplateReferences(
+    templateId: string,
+    transactionalEntityManager?: any,
+  ): Promise<void>;
 }
