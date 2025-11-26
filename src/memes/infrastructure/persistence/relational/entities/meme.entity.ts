@@ -12,12 +12,12 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { FileEntity } from '../../../../../files/infrastructure/persistence/relational/entities/file.entity';
-import { TemplateEntity } from '../../../../../templates/infrastructure/persistence/relational/entities/template.entity';
-import { UserEntity } from '../../../../../users/infrastructure/persistence/relational/entities/user.entity';
-import { EntityRelationalHelper } from '../../../../../utils/relational-entity-helper';
-import { MemeAudience } from '../../../../memes.enum';
-import { TagEntity } from '../../../../../tags/infrastructure/persistence/relational/entities/tag.entity';
+import { FileEntity } from 'src/files/infrastructure/persistence/relational/entities/file.entity';
+import { TemplateEntity } from 'src/templates/infrastructure/persistence/relational/entities/template.entity';
+import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
+import { EntityRelationalHelper } from 'src/utils/relational-entity-helper';
+import { MemeAudience } from 'src/memes/memes.enum';
+import { TagEntity } from 'src/tags/infrastructure/persistence/relational/entities/tag.entity';
 
 @Entity({ name: 'memes' })
 export class MemeEntity extends EntityRelationalHelper {

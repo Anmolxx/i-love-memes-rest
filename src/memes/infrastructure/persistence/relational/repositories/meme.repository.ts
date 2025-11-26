@@ -671,8 +671,8 @@ export class MemesRelationalRepository implements MemesRepository {
     await manager
       .createQueryBuilder()
       .update('memes')
-      .set({ template_id: null })
-      .where('template_id = :tid', { tid: templateId })
+      .set({ templateId: null })
+      .where('templateId = :tid', { tid: templateId })
       .execute();
   }
 }
