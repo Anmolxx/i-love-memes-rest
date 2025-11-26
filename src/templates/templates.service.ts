@@ -310,9 +310,9 @@ export class TemplateService {
   }
 
   async hardDelete(slugOrId: string) {
-    let template = await this.templateRepository.findBySlug(slugOrId);
+    let template = await this.templateRepository.findBySlug(slugOrId, true);
     if (!template && isUUID(slugOrId)) {
-      template = await this.templateRepository.getById(slugOrId);
+      template = await this.templateRepository.getById(slugOrId, true);
     }
 
     if (!template) {

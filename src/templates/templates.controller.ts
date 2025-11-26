@@ -132,6 +132,15 @@ export class TemplateController {
     return createResponse('Template Updated Successfully', result);
   }
 
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Delete(':slugOrId/permanent')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async hardDelete(@Param('slugOrId') slugOrId: string) {
+    await this.templateService.hardDelete(slugOrId);
+  }
+
   @Delete(':slugOrId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
@@ -150,14 +159,5 @@ export class TemplateController {
   ) {
     const restored = await this.templateService.restore(slugOrId, user);
     return createResponse('Template restored successfully', restored);
-  }
-
-  @ApiBearerAuth()
-  @Roles(RoleEnum.admin)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Delete(':slugOrId/permanent')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async hardDelete(@Param('slugOrId') slugOrId: string) {
-    await this.templateService.hardDelete(slugOrId);
   }
 }
