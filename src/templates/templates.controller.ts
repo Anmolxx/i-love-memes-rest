@@ -22,11 +22,7 @@ import {
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { Meme } from 'src/memes/domain/meme';
 import { CreateTemplateResponseDto } from 'src/templates/dto/response/create-template.response.dto';
-import {
-  API_PAGE_LIMIT,
-  extractQueryOptions,
-  IPaginationOptions,
-} from 'src/utils';
+import { API_PAGE_LIMIT, extractQueryOptions } from 'src/utils';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 import { Roles } from '../roles/roles.decorator';
@@ -90,6 +86,25 @@ export class TemplateController {
     );
   }
 
+  @ApiOkResponse({ type: PaginatedResponse(Template) })
+  @ApiBearerAuth()
+  @Roles(RoleEnum.admin)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Get('deleted')
+  @HttpCode(HttpStatus.OK)
+  async findDeleted(@Query() query: TemplateQueryDto) {
+    const { items, meta } =
+      await this.templateService.findDeletedWithPagination(
+        extractQueryOptions<TemplateSortField>(query, API_PAGE_LIMIT),
+      );
+
+    return createPaginatedResponse(
+      'Deleted templates fetched successfully',
+      items,
+      meta,
+    );
+  }
+
   @Get(':slugOrId')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: Template })
@@ -123,38 +138,6 @@ export class TemplateController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('slugOrId') slugOrId: string) {
     await this.templateService.delete(slugOrId);
-  }
-
-  @ApiOkResponse({ type: PaginatedResponse(Template) })
-  @ApiBearerAuth()
-  @Roles(RoleEnum.admin)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Get('deleted')
-  @HttpCode(HttpStatus.OK)
-  async getDeleted(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-  ) {
-    const safePage = page ?? 1;
-    let safeLimit = limit ?? 10;
-    if (safeLimit > API_PAGE_LIMIT) safeLimit = API_PAGE_LIMIT;
-
-    const { items, meta } =
-      await this.templateService.findDeletedWithPagination({
-        paginationOptions: {
-          page: safePage,
-          limit: safeLimit,
-        } as IPaginationOptions,
-        sortOptions: { orderBy: 'createdAt', order: 'DESC' },
-        filterOptions: { search },
-      } as any);
-
-    return createPaginatedResponse(
-      'Deleted templates fetched successfully',
-      items,
-      meta,
-    );
   }
 
   @ApiBearerAuth()

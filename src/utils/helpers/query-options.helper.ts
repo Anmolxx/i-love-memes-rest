@@ -25,8 +25,8 @@ export function extractPaginationOptions(
   const safeLimit = Math.min(queryDto.limit ?? 10, maxLimit);
 
   return {
-    page: safePage,
-    limit: safeLimit,
+    page: Math.abs(safePage),
+    limit: Math.abs(safeLimit),
   };
 }
 
