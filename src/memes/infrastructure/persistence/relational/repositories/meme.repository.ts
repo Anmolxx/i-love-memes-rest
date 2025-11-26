@@ -668,11 +668,12 @@ export class MemesRelationalRepository implements MemesRepository {
     transactionalEntityManager?: any,
   ): Promise<void> {
     const manager = transactionalEntityManager ?? this.memesRepository.manager;
-    await manager
+    const queryBuilder = manager
       .createQueryBuilder()
-      .update('memes')
-      .set({ templateId: null })
-      .where('templateId = :tid', { tid: templateId })
-      .execute();
+      .update(MemeEntity)
+      .set({ template: null })
+      .where('template.id = :templateId', { templateId });
+
+    await queryBuilder.execute();
   }
 }
