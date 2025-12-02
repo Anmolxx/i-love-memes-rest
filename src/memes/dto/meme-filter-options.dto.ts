@@ -57,13 +57,13 @@ export class MemeQueryDto extends BaseQueryDto {
 
   @ApiPropertyOptional({
     description: 'Template IDs to filter memes',
-    type: [String],
+    type: () => Array<string>,
     isArray: true,
   })
   @IsOptional()
   @ArrayNotEmpty()
   @IsString({ each: true })
-  @Type(() => String)
+  @Type(() => Array<string>)
   @Transform(({ value }) =>
     typeof value === 'string'
       ? value
@@ -74,7 +74,7 @@ export class MemeQueryDto extends BaseQueryDto {
         ? value.map((v) => String(v).trim()).filter(Boolean)
         : value,
   )
-  templateIds?: string[];
+  templateIds?: Array<string>;
 
   @ApiPropertyOptional({
     description:
