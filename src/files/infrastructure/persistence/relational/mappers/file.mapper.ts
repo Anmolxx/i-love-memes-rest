@@ -6,6 +6,8 @@ export class FileMapper {
     const domainEntity = new FileType();
     domainEntity.id = raw.id;
     domainEntity.path = raw.path;
+    domainEntity.status = raw.status;
+
     return domainEntity;
   }
 
