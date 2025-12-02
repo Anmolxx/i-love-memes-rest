@@ -77,6 +77,8 @@ export class MemesService {
           status: HttpStatus.UNPROCESSABLE_ENTITY,
           errors: {
             file: 'fileAlreadyLinked',
+            status: fileObject.status,
+            object: fileObject,
           },
         });
       }
@@ -508,7 +510,6 @@ export class MemesService {
       } catch (err) {
         // Log and continue; DB state is consistent (meme removed, file DB row removed)
         // Consider enqueueing a retry/cleanup job here if desired
-        // eslint-disable-next-line no-console
         console.error(
           'Failed to remove file storage after meme hardDelete',
           err,
