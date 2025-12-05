@@ -9,6 +9,7 @@ export class CommentMapper {
     comment.meme = raw.meme;
     comment.author = raw.author;
     comment.parentComment = raw.parentComment;
+    comment.parentCommentId = raw.parentCommentId;
     comment.replyCount = raw.replyCount;
     comment.depth = raw.depth;
     comment.status = raw.status;

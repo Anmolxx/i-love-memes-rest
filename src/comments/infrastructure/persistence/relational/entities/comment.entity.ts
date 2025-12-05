@@ -12,6 +12,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -39,6 +40,9 @@ export class CommentEntity extends EntityRelationalHelper {
   })
   @JoinColumn({ name: 'parent_comment_id' })
   parentComment: CommentEntity | null;
+
+  @RelationId((comment: CommentEntity) => comment.parentComment)
+  parentCommentId: string | null;
 
   @OneToMany(() => CommentEntity, (comment) => comment.parentComment)
   replies: CommentEntity[];
