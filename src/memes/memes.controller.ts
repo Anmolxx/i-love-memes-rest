@@ -43,7 +43,7 @@ export class MemesController {
 
   @ApiCreatedResponse({ type: Meme })
   @ApiBearerAuth()
-  @SerializeOptions({ groups: ['admin'] })
+  @SerializeOptions({ groups: ['meme_details'] })
   @UseGuards(AuthGuard('jwt'))
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -57,7 +57,6 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin', 'user'] })
   @ApiBearerAuth()
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
@@ -94,7 +93,6 @@ export class MemesController {
   }
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin', 'user'] })
   @UseGuards(OptionalJwtAuthGuard)
   @Get('top')
   @HttpCode(HttpStatus.OK)
@@ -214,6 +212,7 @@ export class MemesController {
     required: true,
     description: 'Meme slug or ID',
   })
+  @SerializeOptions({ groups: ['meme_details'] })
   async findOne(
     @CurrentUser() user: User | null,
     @Param('slugOrId') slugOrId: string,
@@ -229,7 +228,7 @@ export class MemesController {
 
   @ApiOkResponse({ type: Meme })
   @ApiBearerAuth()
-  @SerializeOptions({ groups: ['admin'] })
+  @SerializeOptions({ groups: ['meme_details'] })
   @UseGuards(AuthGuard('jwt'))
   @Patch(':slugOrId')
   @HttpCode(HttpStatus.OK)
@@ -254,6 +253,7 @@ export class MemesController {
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
+  @SerializeOptions({ groups: ['meme_details'] })
   @Delete(':slugOrId')
   @ApiParam({
     name: 'slugOrId',
@@ -273,6 +273,7 @@ export class MemesController {
   @ApiOkResponse({ type: Meme })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
+  @SerializeOptions({ groups: ['meme_details'] })
   @Patch(':slugOrId/restore')
   @HttpCode(HttpStatus.OK)
   @ApiParam({
@@ -296,6 +297,7 @@ export class MemesController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Delete(':slugOrId/permanent')
+  @SerializeOptions({ groups: ['meme_details'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiParam({
     name: 'slugOrId',

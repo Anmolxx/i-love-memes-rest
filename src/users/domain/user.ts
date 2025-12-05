@@ -10,13 +10,13 @@ export class User {
   @ApiProperty({
     type: idType,
   })
+  @Expose({ groups: ['me', 'admin'] })
   id: string;
 
   @ApiProperty({
     type: String,
     example: 'john.doe@example.com',
   })
-  @Expose({ groups: ['me', 'admin'] })
   email: string | null;
 
   @Exclude({ toPlainOnly: true })
@@ -56,19 +56,24 @@ export class User {
   @ApiProperty({
     type: () => Role,
   })
+  @Expose({ groups: ['me', 'admin'] })
   role?: Role | null;
 
   @ApiProperty({
     type: () => Status,
   })
+  @Expose({ groups: ['me', 'admin'] })
   status?: Status;
 
   @ApiProperty()
+  @Expose({ groups: ['me', 'admin'] })
   createdAt: Date;
 
   @ApiProperty()
+  @Expose({ groups: ['me', 'admin'] })
   updatedAt: Date;
 
   @ApiProperty()
+  @Expose({ groups: ['me', 'admin'] })
   deletedAt: Date;
 }

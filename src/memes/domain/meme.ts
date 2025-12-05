@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { InteractionSummaryDto } from 'src/interactions/dto/interaction-summary.dto';
 import { Template } from 'src/templates/domain/template';
 import { User } from 'src/users/domain/user';
@@ -32,6 +33,9 @@ export class Meme {
   description?: string;
 
   @ApiProperty({ type: () => Template })
+  @Expose({
+    groups: ['meme_details'],
+  })
   template?: Partial<Template> | null;
 
   @ApiProperty({ type: () => FileType })
@@ -47,12 +51,21 @@ export class Meme {
   audience: MemeAudience;
 
   @ApiProperty()
+  @Expose({
+    groups: ['meme_details'],
+  })
   createdAt: Date;
 
   @ApiProperty()
+  @Expose({
+    groups: ['meme_details'],
+  })
   updatedAt: Date;
 
   @ApiProperty()
+  @Expose({
+    groups: ['meme_details'],
+  })
   deletedAt: Date;
 
   @ApiProperty({

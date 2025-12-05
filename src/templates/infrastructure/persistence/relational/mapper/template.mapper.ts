@@ -1,4 +1,5 @@
 import { TagMapper } from 'src/tags/infrastructure/persistence/relational/mapper/tag.mapper';
+import { UserMapper } from 'src/users/infrastructure/persistence/relational/mappers/user.mapper';
 import { Template } from '../../../../domain/template';
 import { TemplateEntity } from '../entities/template.entity';
 
@@ -12,10 +13,7 @@ export class TemplateMapper {
     domain.config = raw.config;
 
     if (raw.author) {
-      domain.author = {
-        id: raw.author.id,
-        email: raw.author.email,
-      } as any;
+      domain.author = UserMapper.toDomain(raw.author);
     }
 
     if (raw.tags) {

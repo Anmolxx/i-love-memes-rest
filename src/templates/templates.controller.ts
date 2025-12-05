@@ -54,6 +54,7 @@ export class TemplateController {
   @ApiCreatedResponse({ type: CreateTemplateResponseDto })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
+  @SerializeOptions({ groups: ['template_details'] })
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createTemplateDto: CreateTemplateDto,
@@ -64,7 +65,6 @@ export class TemplateController {
   }
 
   @ApiOkResponse({ type: PaginatedResponse(Meme) })
-  @SerializeOptions({ groups: ['admin', 'user'] })
   @ApiBearerAuth()
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
@@ -107,6 +107,7 @@ export class TemplateController {
 
   @Get(':slugOrId')
   @HttpCode(HttpStatus.OK)
+  @SerializeOptions({ groups: ['user', 'template_details'] })
   @ApiOkResponse({ type: Template })
   async getById(@Param('slugOrId') slugOrId: string) {
     const result = await this.templateService.findOne(slugOrId);
@@ -118,6 +119,7 @@ export class TemplateController {
   @UseGuards(AuthGuard('jwt'))
   @ApiOkResponse({ type: Template })
   @HttpCode(HttpStatus.OK)
+  @SerializeOptions({ groups: ['user', 'template_details'] })
   async update(
     @Body() updateTemplateDto: UpdateTemplateDto,
     @Param('slugOrId') slugOrId: string,

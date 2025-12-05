@@ -1,12 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserSummary } from '../../users/domain/user-summary';
+import { Expose } from 'class-transformer';
 import { Tag } from '../../tags/domain/tag';
+import { UserSummary } from 'src/users/domain/user-summary';
 import { TemplateSummaryDto } from '../dto/template-summary.dto';
 
 export class Template {
   @ApiProperty({
     type: String,
     example: 'cbcfa8b8-3a25-4adb-a9c6-e325f0d0f3ae',
+  })
+  @Expose({
+    groups: ['template_details'],
   })
   id: string;
 
@@ -59,15 +63,27 @@ export class Template {
       ],
     },
   })
+  @Expose({
+    groups: ['template_details'],
+  })
   config: Record<string, any>;
 
   @ApiProperty({ type: Date })
+  @Expose({
+    groups: ['template_details'],
+  })
   createdAt: Date;
 
   @ApiProperty({ type: Date })
+  @Expose({
+    groups: ['template_details'],
+  })
   updatedAt: Date;
 
   @ApiPropertyOptional({ type: Date })
+  @Expose({
+    groups: ['template_details'],
+  })
   deletedAt?: Date | null;
 
   @ApiProperty({

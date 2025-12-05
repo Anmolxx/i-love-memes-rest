@@ -1,4 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Meme } from 'src/memes/domain/meme';
+import { User } from 'src/users/domain/user';
 
 export class Comment {
   @ApiProperty({
@@ -13,14 +15,14 @@ export class Comment {
   })
   content: string;
 
-  @ApiProperty({ type: () => Object })
-  meme: any;
+  @ApiProperty({ type: () => Meme })
+  meme: Meme;
 
-  @ApiProperty({ type: () => Object })
-  author: any;
+  @ApiProperty({ type: () => User })
+  author: User;
 
-  @ApiPropertyOptional({ type: () => Object })
-  parentComment?: any | null;
+  @ApiPropertyOptional({ type: () => Comment })
+  parentComment?: Comment | null;
 
   @ApiPropertyOptional({
     type: String,

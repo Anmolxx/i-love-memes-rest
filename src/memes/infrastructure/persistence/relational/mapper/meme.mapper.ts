@@ -2,6 +2,7 @@ import { FileMapper } from 'src/files/infrastructure/persistence/relational/mapp
 import { Meme } from 'src/memes/domain/meme';
 import { TagMapper } from 'src/tags/infrastructure/persistence/relational/mapper/tag.mapper';
 import { TemplateEntity } from 'src/templates/infrastructure/persistence/relational/entities/template.entity';
+import { TemplateMapper } from 'src/templates/infrastructure/persistence/relational/mapper/template.mapper';
 import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
 import { UserMapper } from 'src/users/infrastructure/persistence/relational/mappers/user.mapper';
 import { MemeEntity } from '../entities/meme.entity';
@@ -15,11 +16,7 @@ export class MemeMapper {
     domain.description = raw.description;
 
     if (raw.template) {
-      domain.template = {
-        id: raw.template.id,
-        slug: raw.template.slug,
-        title: raw.template.title,
-      };
+      domain.template = TemplateMapper.toDomain(raw.template);
     }
 
     if (raw.file) {

@@ -1,14 +1,22 @@
+import { MemeMapper } from 'src/memes/infrastructure/persistence/relational/mapper/meme.mapper';
+import { UserMapper } from 'src/users/infrastructure/persistence/relational/mappers/user.mapper';
 import { Comment } from '../../../../domain/comment';
 import { CommentEntity } from '../entities/comment.entity';
 
 export class CommentMapper {
   static toDomain(raw: CommentEntity): Comment {
-    const comment = new Comment();
+    const comment = Object.assign(new Comment(), raw.toJSON());
     comment.id = raw.id;
     comment.content = raw.content;
-    comment.meme = raw.meme;
-    comment.author = raw.author;
-    comment.parentComment = raw.parentComment;
+    comment.meme = MemeMapper.toDomain(raw.meme);
+
+    if (raw.author) {
+      comment.author = UserMapper.toDomain(raw.author);
+    }
+
+    comment.parentComment = raw.parentComment
+      ? CommentMapper.toDomain(raw.parentComment)
+      : null;
     comment.parentCommentId = raw.parentCommentId;
     comment.replyCount = raw.replyCount;
     comment.depth = raw.depth;
@@ -26,9 +34,11 @@ export class CommentMapper {
       entity.id = comment.id;
     }
     entity.content = comment.content;
-    entity.meme = comment.meme;
-    entity.author = comment.author;
-    entity.parentComment = comment.parentComment ?? null;
+    entity.meme = MemeMapper.toPersistence(comment.meme);
+    entity.author = UserMapper.toPersistence(comment.author);
+    entity.parentComment = comment.parentComment
+      ? CommentMapper.toPersistence(comment.parentComment)
+      : null;
     entity.replyCount = comment.replyCount;
     entity.depth = comment.depth;
     entity.status = comment.status as any;

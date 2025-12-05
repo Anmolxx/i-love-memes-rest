@@ -5,5 +5,5 @@ export class UserSummary {
   id: string;
 
   @ApiProperty({ example: 'john.doe@example.com' })
-  email: string;
+  email: string | null;
 }

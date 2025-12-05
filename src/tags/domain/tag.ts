@@ -1,9 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 
 export class Tag {
   @ApiProperty({
     type: String,
     example: 'cbcfa8b8-3a25-4adb-a9c6-e325f0d0f3ae',
+  })
+  @Expose({
+    groups: ['tag_details'],
   })
   id: string;
 
@@ -51,11 +55,20 @@ export class Tag {
   status: string;
 
   @ApiProperty({ type: Date })
+  @Expose({
+    groups: ['tag_details'],
+  })
   createdAt: Date;
 
   @ApiProperty({ type: Date })
+  @Expose({
+    groups: ['tag_details'],
+  })
   updatedAt: Date;
 
   @ApiPropertyOptional({ type: Date })
+  @Expose({
+    groups: ['tag_details'],
+  })
   deletedAt?: Date | null;
 }

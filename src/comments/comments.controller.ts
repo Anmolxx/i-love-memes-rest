@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Request,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -51,6 +52,7 @@ export class CommentsController {
     type: String,
     description: 'Meme slug or UUID',
   })
+  @SerializeOptions({ groups: ['comments'] })
   @ApiOkResponse({ type: PaginatedResponse(Comment) })
   async findByMeme(
     @Param('slugOrId') slugOrId: string,
@@ -74,6 +76,7 @@ export class CommentsController {
 
   @Get(':id/replies')
   @ApiParam({ name: 'id', type: String })
+  @SerializeOptions({ groups: ['comments'] })
   @ApiOkResponse({ type: PaginatedResponse(Comment) })
   async findReplies(@Param('id') id: string, @Query() query: QueryCommentDto) {
     let limit = query.limit || 10;

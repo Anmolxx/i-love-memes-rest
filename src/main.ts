@@ -77,7 +77,7 @@ async function bootstrap() {
   const options = new DocumentBuilder()
     .setTitle('I Love Memes API')
     .setDescription('I Love Memes Docs')
-    .setVersion('1.0.0-rc7')
+    .setVersion('1.0.0-rc17')
     .addBearerAuth({
       type: 'http',
       scheme: 'bearer',

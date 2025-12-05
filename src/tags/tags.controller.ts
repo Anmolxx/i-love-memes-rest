@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -38,6 +39,7 @@ import { extractQueryOptions, API_PAGE_LIMIT } from 'src/utils';
   path: 'tags',
   version: '1',
 })
+@SerializeOptions({ groups: ['tag_details'] })
 export class TagsController {
   constructor(private readonly tagsService: TagsService) {}
 

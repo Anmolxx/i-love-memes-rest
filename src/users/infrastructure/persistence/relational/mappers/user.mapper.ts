@@ -1,15 +1,18 @@
-import { FileEntity } from '../../../../../files/infrastructure/persistence/relational/entities/file.entity';
-import { FileMapper } from '../../../../../files/infrastructure/persistence/relational/mappers/file.mapper';
-import { RoleEntity } from '../../../../../roles/infrastructure/persistence/relational/entities/role.entity';
-import { StatusEntity } from '../../../../../statuses/infrastructure/persistence/relational/entities/status.entity';
-import { User } from '../../../../domain/user';
+import { FileEntity } from 'src/files/infrastructure/persistence/relational/entities/file.entity';
+import { FileMapper } from 'src/files/infrastructure/persistence/relational/mappers/file.mapper';
+import { RoleEntity } from 'src/roles/infrastructure/persistence/relational/entities/role.entity';
+import { StatusEntity } from 'src/statuses/infrastructure/persistence/relational/entities/status.entity';
+import { User } from 'src/users/domain/user';
 import { UserEntity } from '../entities/user.entity';
 
 export class UserMapper {
   static toDomain(raw: UserEntity): User {
     const domainEntity = new User();
     domainEntity.id = raw.id;
-    domainEntity.email = raw.email;
+    if (raw.email !== null && raw.email !== undefined) {
+      domainEntity.email = raw.email;
+    }
+
     domainEntity.password = raw.password;
     domainEntity.provider = raw.provider;
     domainEntity.socialId = raw.socialId;
