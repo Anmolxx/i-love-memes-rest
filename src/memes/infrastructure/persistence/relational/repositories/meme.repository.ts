@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MemeInteraction } from 'src/interactions/domain/meme-interaction';
 import { Meme } from 'src/memes/domain/meme';
 import {
   IMemeFilters,
@@ -70,7 +71,20 @@ export class MemesRelationalRepository implements MemesRepository {
     const total = await countQb.getCount();
 
     // Merge computed columns from raw into entities
-    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+    let mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    // If user is logged in, fetch and merge their interactions separately
+    if (currentUserId && mergedEntities.length > 0) {
+      const memeIds = mergedEntities.map((e) => e.id);
+      const userInteractionMap = await this.fetchUserInteractionsForMemes(
+        memeIds,
+        currentUserId,
+      );
+      mergedEntities = this.mergeUserInteractions(
+        mergedEntities,
+        userInteractionMap,
+      );
+    }
 
     const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
 
@@ -124,7 +138,7 @@ export class MemesRelationalRepository implements MemesRepository {
 
     // Apply base joins and interaction selects
     this.applyBaseJoins(qb);
-    this.addInteractionCountSelects(qb, currentUserId);
+    this.addInteractionCountSelects(qb);
 
     // Get raw and entity
     const { raw, entities } = await qb.getRawAndEntities();
@@ -134,8 +148,22 @@ export class MemesRelationalRepository implements MemesRepository {
     }
 
     // Merge computed columns
-    const mergedEntity = this.mergeRawComputedColumns(entities, raw)[0];
-    return MemeMapper.toDomain(mergedEntity);
+    let mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    // If user is logged in, fetch and merge their interactions separately
+    if (currentUserId) {
+      const memeIds = mergedEntities.map((e) => e.id);
+      const userInteractionMap = await this.fetchUserInteractionsForMemes(
+        memeIds,
+        currentUserId,
+      );
+      mergedEntities = this.mergeUserInteractions(
+        mergedEntities,
+        userInteractionMap,
+      );
+    }
+
+    return MemeMapper.toDomain(mergedEntities[0]);
   }
 
   async findByTitle(title: string) {
@@ -218,7 +246,20 @@ export class MemesRelationalRepository implements MemesRepository {
     const total = await countQb.getCount();
 
     // Merge computed columns from raw into entities
-    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+    let mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    // If user is logged in, fetch and merge their interactions separately
+    if (currentUserId && mergedEntities.length > 0) {
+      const memeIds = mergedEntities.map((e) => e.id);
+      const userInteractionMap = await this.fetchUserInteractionsForMemes(
+        memeIds,
+        currentUserId,
+      );
+      mergedEntities = this.mergeUserInteractions(
+        mergedEntities,
+        userInteractionMap,
+      );
+    }
 
     const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
 
@@ -236,10 +277,12 @@ export class MemesRelationalRepository implements MemesRepository {
     filterOptions,
     sortOptions,
     paginationOptions,
+    currentUserId,
   }: {
     filterOptions?: IFilterOptions<IMemeFilters> | null;
     sortOptions?: ISortOptions<MemeSortField>;
     paginationOptions: { page: number; limit: number };
+    currentUserId?: string;
   }): Promise<{ items: Meme[]; meta: PaginationMetaDto }> {
     const qb = this.memesRepository.createQueryBuilder('meme');
 
@@ -251,7 +294,7 @@ export class MemesRelationalRepository implements MemesRepository {
       filterOptions,
       sortOptions,
       enforceAudiencePublic: false,
-      currentUserId: undefined,
+      currentUserId,
     });
 
     qb.skip((paginationOptions.page - 1) * paginationOptions.limit).take(
@@ -267,7 +310,20 @@ export class MemesRelationalRepository implements MemesRepository {
     this.applyFilters(countQb, filterOptions, false);
     const total = await countQb.getCount();
 
-    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+    let mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    // If user is logged in, fetch and merge their interactions separately
+    if (currentUserId && mergedEntities.length > 0) {
+      const memeIds = mergedEntities.map((e) => e.id);
+      const userInteractionMap = await this.fetchUserInteractionsForMemes(
+        memeIds,
+        currentUserId,
+      );
+      mergedEntities = this.mergeUserInteractions(
+        mergedEntities,
+        userInteractionMap,
+      );
+    }
 
     const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
 
@@ -323,7 +379,21 @@ export class MemesRelationalRepository implements MemesRepository {
     this.applyFilters(countQb, filterOptions, false);
     const total = await countQb.getCount();
 
-    const mergedEntities = this.mergeRawComputedColumns(entities, raw);
+    let mergedEntities = this.mergeRawComputedColumns(entities, raw);
+
+    // If user is logged in, fetch and merge their interactions separately
+    if (currentUserId && mergedEntities.length > 0) {
+      const memeIds = mergedEntities.map((e) => e.id);
+      const userInteractionMap = await this.fetchUserInteractionsForMemes(
+        memeIds,
+        currentUserId,
+      );
+      mergedEntities = this.mergeUserInteractions(
+        mergedEntities,
+        userInteractionMap,
+      );
+    }
+
     const items = mergedEntities.map((e) => MemeMapper.toDomain(e));
 
     const meta = {
@@ -347,7 +417,7 @@ export class MemesRelationalRepository implements MemesRepository {
   ): Promise<{ fileId?: string; filePath?: string } | any> {
     // Perform deletion in a transaction to ensure meme row is removed first
     // so ON DELETE CASCADE removes comments and interactions, then remove file row
-    const result = await this.memesRepository.manager.connection.transaction(
+    return await this.memesRepository.manager.connection.transaction(
       async (manager) => {
         // Load meme with file relation using the transactional manager
         const meme = await manager.findOne(MemeEntity, {
@@ -375,8 +445,6 @@ export class MemesRelationalRepository implements MemesRepository {
         return { fileId, filePath };
       },
     );
-
-    return result;
   }
 
   /**
@@ -476,12 +544,9 @@ export class MemesRelationalRepository implements MemesRepository {
   }
 
   /**
-   * Add interaction count selects to query builder
+   * Add interaction count selects to query builder (global stats only)
    */
-  private addInteractionCountSelects(
-    qb: SelectQueryBuilder<MemeEntity>,
-    currentUserId?: string,
-  ): void {
+  private addInteractionCountSelects(qb: SelectQueryBuilder<MemeEntity>): void {
     qb.addSelect(
       `(SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE')`,
       'interaction_upvote_count',
@@ -502,21 +567,76 @@ export class MemesRelationalRepository implements MemesRepository {
       `( (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'UPVOTE') - (SELECT COALESCE(COUNT(*), 0) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.type = 'DOWNVOTE') )`,
       'interaction_net_score',
     );
+  }
 
-    // Add user-specific interaction data if currentUserId is provided
-    if (currentUserId) {
-      qb.addSelect(
-        `CAST((SELECT COALESCE(
-          json_agg(
-            json_build_object('type', mi.type, 'createdAt', mi."createdAt", 'reason', mi.reason, 'note', mi.note)
-            ORDER BY mi."createdAt" DESC
-          ),
-          '[]'::json
-        ) FROM meme_interactions mi WHERE mi.meme_id = meme.id AND mi.user_id = :currentUserId) AS TEXT)`,
-        'user_interactions',
-      );
-      qb.setParameter('currentUserId', currentUserId);
+  /**
+   * Fetch user-specific interactions for a list of meme IDs
+   * Returns a map of memeId -> user interactions array
+   */
+  private async fetchUserInteractionsForMemes(
+    memeIds: string[],
+    userId: string,
+  ): Promise<Map<string, MemeInteraction[]>> {
+    if (!memeIds.length || !userId) {
+      return new Map();
     }
+
+    const rawInteractions: any[] = await this.memesRepository.manager.query(
+      `
+      SELECT 
+        mi.meme_id,
+        json_agg(
+          json_build_object(
+            'type', mi.type, 
+            'createdAt', mi."createdAt", 
+            'reason', mi.reason, 
+            'note', mi.note
+          )
+          ORDER BY mi."createdAt" DESC
+        ) as interactions
+      FROM meme_interactions mi
+      WHERE mi.meme_id = ANY($1) AND mi.user_id = $2
+      GROUP BY mi.meme_id
+    `,
+      [memeIds, userId],
+    );
+
+    const interactionMap = new Map<string, MemeInteraction[]>();
+    for (const row of rawInteractions) {
+      let interactions: MemeInteraction[] = [];
+      if (row.interactions) {
+        if (typeof row.interactions === 'string') {
+          try {
+            interactions = JSON.parse(row.interactions) as MemeInteraction[];
+          } catch {
+            interactions = [];
+          }
+        } else if (Array.isArray(row.interactions)) {
+          interactions = row.interactions as MemeInteraction[];
+        }
+      }
+
+      interactionMap.set(row.meme_id, interactions);
+    }
+
+    return interactionMap;
+  }
+
+  /**
+   * Merge user interactions into meme entities
+   */
+  private mergeUserInteractions(
+    entities: MemeEntity[],
+    interactionMap: Map<string, MemeInteraction[]>,
+  ): MemeEntity[] {
+    return entities.map((entity) => {
+      const userInteractions = interactionMap.get(entity.id) ?? [];
+      if (userInteractions.length > 0) {
+        // Store as JSON string to match the expected format in mapper
+        (entity as any)['user_interactions'] = JSON.stringify(userInteractions);
+      }
+      return entity;
+    });
   }
 
   /**
@@ -631,11 +751,10 @@ export class MemesRelationalRepository implements MemesRepository {
       currentUserId?: string;
     },
   ) {
-    const { filterOptions, sortOptions, enforceAudiencePublic, currentUserId } =
-      opts;
+    const { filterOptions, sortOptions, enforceAudiencePublic } = opts;
 
     this.applyBaseJoins(qb);
-    this.addInteractionCountSelects(qb, currentUserId);
+    this.addInteractionCountSelects(qb);
     this.applyFilters(qb, filterOptions, enforceAudiencePublic);
     this.applySorting(qb, sortOptions);
   }
@@ -643,7 +762,10 @@ export class MemesRelationalRepository implements MemesRepository {
   /**
    * Merge raw computed columns from query results into entity objects
    */
-  private mergeRawComputedColumns<T>(entities: T[], raw: any[]): T[] {
+  private mergeRawComputedColumns<T extends { id?: string }>(
+    entities: T[],
+    raw: any[],
+  ): T[] {
     const computedColumns = [
       'interaction_upvote_count',
       'interaction_downvote_count',
@@ -651,14 +773,31 @@ export class MemesRelationalRepository implements MemesRepository {
       'interaction_flag_count',
       'interaction_net_score',
       'calculated_score',
-      'user_interactions',
     ];
 
+    // If no raw rows, just return entities unchanged
+    if (!raw || raw.length === 0) {
+      return entities;
+    }
+
     return entities.map((entity, idx) => {
-      const row = raw[idx] ?? {};
+      const entityId = (entity as any).id;
+
+      // Try to find the raw row that corresponds to this entity by matching any value to the entity id.
+      // This handles cases where joins produced multiple raw rows per entity and ordering doesn't match.
+      let matchedRow = raw.find((r) =>
+        Object.values(r).some((v) => v === entityId || v === String(entityId)),
+      );
+
+      // Fallback: if no match found, use raw at same index (preserve previous behavior)
+      if (!matchedRow) {
+        matchedRow = raw[idx] ?? {};
+      }
+
       computedColumns.forEach((key) => {
-        (entity as any)[key] = row[key];
+        (entity as any)[key] = matchedRow[key];
       });
+
       return entity;
     });
   }
