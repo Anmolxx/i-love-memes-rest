@@ -10,7 +10,10 @@ export class CommentMapper {
     const comment = Object.assign(new Comment(), raw.toJSON());
     comment.id = raw.id;
     comment.content = raw.content;
-    comment.meme = MemeMapper.toDomain(raw.meme);
+
+    if (raw.meme) {
+      comment.meme = MemeMapper.toDomain(raw.meme);
+    }
 
     if (raw.author) {
       comment.author = UserMapper.toDomain(raw.author);
@@ -37,11 +40,11 @@ export class CommentMapper {
     }
     entity.content = comment.content;
 
-    if (comment.author && comment.author.id) {
+    if (comment.author && comment.author?.id) {
       entity.author = { id: comment.author.id } as UserEntity;
     }
 
-    if (comment.meme && comment.meme.id) {
+    if (comment.meme && comment.meme?.id) {
       entity.meme = { id: comment.meme.id } as MemeEntity;
     }
 
