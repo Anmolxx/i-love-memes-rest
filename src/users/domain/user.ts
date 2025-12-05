@@ -10,7 +10,9 @@ export class User {
   @ApiProperty({
     type: idType,
   })
-  @Expose({ groups: ['me', 'admin', 'comments'] })
+  @Expose({
+    groups: ['me', 'admin', 'comments', 'meme_details', 'template_details'],
+  })
   id: string;
 
   @ApiProperty({
