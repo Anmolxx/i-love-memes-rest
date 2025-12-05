@@ -1,4 +1,6 @@
+import { MemeEntity } from 'src/memes/infrastructure/persistence/relational/entities/meme.entity';
 import { MemeMapper } from 'src/memes/infrastructure/persistence/relational/mapper/meme.mapper';
+import { UserEntity } from 'src/users/infrastructure/persistence/relational/entities/user.entity';
 import { UserMapper } from 'src/users/infrastructure/persistence/relational/mappers/user.mapper';
 import { Comment } from '../../../../domain/comment';
 import { CommentEntity } from '../entities/comment.entity';
@@ -34,8 +36,15 @@ export class CommentMapper {
       entity.id = comment.id;
     }
     entity.content = comment.content;
-    entity.meme = MemeMapper.toPersistence(comment.meme);
-    entity.author = UserMapper.toPersistence(comment.author);
+
+    if (comment.author && comment.author.id) {
+      entity.author = { id: comment.author.id } as UserEntity;
+    }
+
+    if (comment.meme && comment.meme.id) {
+      entity.meme = { id: comment.meme.id } as MemeEntity;
+    }
+
     entity.parentComment = comment.parentComment
       ? CommentMapper.toPersistence(comment.parentComment)
       : null;
