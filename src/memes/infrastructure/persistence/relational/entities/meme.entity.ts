@@ -72,6 +72,8 @@ export class MemeEntity extends EntityRelationalHelper {
     name: 'meme_tags',
     joinColumn: { name: 'meme_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
+    synchronize: false,
   })
-  tags: TagEntity[];
+   tags: TagEntity[];
 }
+ 

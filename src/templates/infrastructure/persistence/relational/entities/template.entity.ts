@@ -51,6 +51,7 @@ export class TemplateEntity extends EntityRelationalHelper {
     name: 'template_tags',
     joinColumn: { name: 'template_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
+    synchronize: false,
   })
   tags: TagEntity[];
 
