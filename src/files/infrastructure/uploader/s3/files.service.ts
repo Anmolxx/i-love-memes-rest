@@ -1,4 +1,4 @@
-import {
+﻿import {
   HttpStatus,
   Injectable,
   UnprocessableEntityException,
@@ -15,15 +15,16 @@ export class FilesS3Service {
     if (!file) {
       throw new UnprocessableEntityException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: {
-          file: 'selectFile',
-        },
+        errors: { file: 'selectFile' },
       });
     }
 
+    const cleanKey = file.key.split('?')[0].split('/').pop() ?? file.key;
+    const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${cleanKey}`;
+
     return {
       file: await this.fileRepository.create({
-        path: `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${file.key}`,
+        path,
         status: FileStatus.TEMPORARY,
       }),
     };
