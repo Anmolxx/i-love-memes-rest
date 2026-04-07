@@ -20,7 +20,7 @@ export class FilesS3Service {
     }
 
     const cleanKey = file.key.split('?')[0].split('/').pop() ?? file.key;
-    const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${cleanKey}`;
+    const path = `TESTSENTINEL_https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${cleanKey}`;
 
     return {
       file: await this.fileRepository.create({
