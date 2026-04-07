@@ -25,6 +25,8 @@ const infrastructurePersistenceModule = RelationalFilePersistenceModule;
       useFactory: (configService: ConfigService<AllConfigType>) => {
         const s3 = new S3Client({
           region: configService.get('file.awsS3Region', { infer: true }),
+          endpoint: process.env.AWS_S3_ENDPOINT,
+          forcePathStyle: true,
           credentials: {
             accessKeyId: configService.getOrThrow('file.accessKeyId', {
               infer: true,
