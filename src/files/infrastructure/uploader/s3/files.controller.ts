@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Request,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -25,9 +26,7 @@ import { FilesS3Service } from './files.service';
 export class FilesS3Controller {
   constructor(private readonly filesService: FilesS3Service) {}
 
-  @ApiCreatedResponse({
-    type: FileResponseDto,
-  })
+  @ApiCreatedResponse({ type: FileResponseDto })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('upload')
@@ -36,17 +35,16 @@ export class FilesS3Controller {
     schema: {
       type: 'object',
       properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
+        file: { type: 'string', format: 'binary' },
       },
     },
   })
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
+    @Request() req: any,
     @UploadedFile() file: Express.MulterS3.File,
   ): Promise<FileResponseDto> {
+    file.key = req._uploadedKey;
     return this.filesService.create(file);
   }
 }

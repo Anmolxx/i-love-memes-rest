@@ -56,13 +56,12 @@ const infrastructurePersistenceModule = RelationalFilePersistenceModule;
             }),
             contentType: multerS3.AUTO_CONTENT_TYPE,
             key: (request, file, callback) => {
-              callback(
-                null,
-                `${randomStringGenerator()}.${file.originalname
-                  .split('.')
-                  .pop()
-                  ?.toLowerCase()}`,
-              );
+              const filename = `${randomStringGenerator()}.${file.originalname
+                .split('.')
+                .pop()
+                ?.toLowerCase()}`;
+              (request as any)._uploadedKey = filename;
+              callback(null, filename);
             },
           }),
           limits: {
