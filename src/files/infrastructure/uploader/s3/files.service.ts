@@ -30,11 +30,15 @@ export class FilesS3Service {
 
     const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
 
+    const created = await this.fileRepository.create({
+      path,
+      status: FileStatus.TEMPORARY,
+   });
+
+    console.log("SAVED PATH:", created.path);
+
     return {
-      file: await this.fileRepository.create({
-        path,
-        status: FileStatus.TEMPORARY,
-      }),
+      file: created,
     };
   }
 }
