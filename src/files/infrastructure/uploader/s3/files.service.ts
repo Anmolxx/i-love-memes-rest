@@ -25,7 +25,7 @@ export class FilesS3Service {
       return match ? match[1] : rawKey.split('/').pop()!.split('?')[0];
     })();
 
-    const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
+    const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${file.key}`;
 
     return {
       file: await this.fileRepository.create({
