@@ -11,7 +11,6 @@ import multerS3 from 'multer-s3';
 import { AllConfigType } from '../../../../config/config.type';
 import { RelationalFilePersistenceModule } from '../../persistence/relational/relational-persistence.module';
 import { FilesS3Controller } from './files.controller';
-
 import { FilesS3Service } from './files.service';
 
 const infrastructurePersistenceModule = RelationalFilePersistenceModule;
@@ -25,8 +24,6 @@ const infrastructurePersistenceModule = RelationalFilePersistenceModule;
       useFactory: (configService: ConfigService<AllConfigType>) => {
         const s3 = new S3Client({
           region: configService.get('file.awsS3Region', { infer: true }),
-          endpoint: process.env.AWS_S3_ENDPOINT,
-          forcePathStyle: true,
           credentials: {
             accessKeyId: configService.getOrThrow('file.accessKeyId', {
               infer: true,
@@ -44,13 +41,12 @@ const infrastructurePersistenceModule = RelationalFilePersistenceModule;
                 new UnprocessableEntityException({
                   status: HttpStatus.UNPROCESSABLE_ENTITY,
                   errors: {
-                    file: `cantUploadFileType`,
+                    file: 'cantUploadFileType',
                   },
                 }),
                 false,
               );
             }
-
             callback(null, true);
           },
           storage: multerS3({
