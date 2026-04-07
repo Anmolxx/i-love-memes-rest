@@ -53,6 +53,8 @@ export class FilesS3Service {
       });
     }
 
+    console.log('file.key:', file.key, 'file.location:', file.location);
+
     const supabasePublicUrl = `https://tnpwudwthsicppibhqzp.supabase.co/storage/v1/object/public/${process.env.AWS_DEFAULT_S3_BUCKET}/${file.key}`;
 
     return {
