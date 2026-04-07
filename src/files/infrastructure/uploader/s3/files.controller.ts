@@ -44,7 +44,6 @@ export class FilesS3Controller {
     @Request() req: any,
     @UploadedFile() file: Express.MulterS3.File,
   ): Promise<FileResponseDto> {
-    file.key = req._uploadedKey;
-    return this.filesService.create(file);
+    return this.filesService.create(file, req._uploadedKey);
   }
 }
