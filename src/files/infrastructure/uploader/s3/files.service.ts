@@ -19,6 +19,9 @@ export class FilesS3Service {
       });
     }
 
+    console.log('CLEANKEY:', cleanKey);
+    console.log('FILEKEY:', file.key);
+
     const key = cleanKey ?? (() => {
       const rawKey = decodeURIComponent(file.key ?? '');
       const match = rawKey.match(/([^\/\?]+\.[a-z]+)(?:\?|$)/i);
