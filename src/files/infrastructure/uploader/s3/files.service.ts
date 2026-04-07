@@ -19,10 +19,12 @@ export class FilesS3Service {
       });
     }
 
-    const ext = file.originalname.split('.').pop()?.toLowerCase();
-    const filename = `${file.key}`.replace(/^.*\//, '').split('?')[0];
-    const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${filename}`;
-    
+    const rawKey = decodeURIComponent(file.key ?? '');
+    const match = rawKey.match(/([^\/\?]+\.[a-z]+)(?:\?|$)/i);
+    const cleanKey = match ? match[1] : rawKey.split('/').pop()!.split('?')[0];
+
+    const path = `https://${process.env.AWS_DEFAULT_S3_BUCKET}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${cleanKey}`;
+
     return {
       file: await this.fileRepository.create({
         path,
