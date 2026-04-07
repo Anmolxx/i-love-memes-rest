@@ -89,7 +89,7 @@ export class FilesS3Service {
 
     const key = file.key.split('/').pop() ?? file.key;
     const path = `https://tnpwudwthsicppibhqzp.supabase.co/storage/v1/object/public/i-love-memes-files/${key}`;
-
+    
     return {
       file: await this.fileRepository.create({
         path,

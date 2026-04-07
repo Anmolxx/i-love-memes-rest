@@ -47,6 +47,7 @@ export class FilesS3Controller {
   async uploadFile(
     @UploadedFile() file: Express.MulterS3.File,
   ): Promise<FileResponseDto> {
+    file.location = '';
     return this.filesService.create(file);
   }
 }
