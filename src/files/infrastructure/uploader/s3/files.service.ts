@@ -23,7 +23,7 @@ export class FilesS3Service {
 
     return {
       file: await this.fileRepository.create({
-        path: file.key,
+        path: file.location || `${process.env.AWS_S3_ENDPOINT}/${process.env.AWS_DEFAULT_S3_BUCKET}/${file.key}`,
         status: FileStatus.TEMPORARY,
       }),
     };
